@@ -23,6 +23,9 @@ COPY APP_autoML/ .
 # Copy automl_transformer from parent directory (important for full_automl.py)
 COPY automl_transformer/ /automl_transformer
 
+# Copy utils from parent directory (needed by automl_transformer)
+COPY utils/ /utils
+
 # Copy data/metatransformer_training (model weights)
 COPY data/metatransformer_training/ /data/metatransformer_training
 
@@ -32,7 +35,7 @@ RUN mkdir -p uploads logs models/xgboost_models instance
 # Set environment variables
 ENV FLASK_APP=run.py
 ENV PYTHONUNBUFFERED=1
-ENV PYTHONPATH=/app:/
+ENV PYTHONPATH=/app:/:/automl_transformer:/utils
 ENV PORT=8080
 
 # Expose port (Railway will set PORT env variable)
