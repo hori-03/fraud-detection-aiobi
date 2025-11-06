@@ -33,9 +33,11 @@ RUN mkdir -p uploads logs models/xgboost_models instance
 ENV FLASK_APP=run.py
 ENV PYTHONUNBUFFERED=1
 ENV PYTHONPATH=/app:/
+ENV PORT=8080
 
 # Expose port (Railway will set PORT env variable)
-EXPOSE 5000
+EXPOSE 8080
 
 # Run with gunicorn for production
-CMD gunicorn --bind 0.0.0.0:$PORT --workers 2 --threads 2 --timeout 300 --keep-alive 5 run:app
+# Use shell form to allow variable expansion
+CMD gunicorn --bind 0.0.0.0:${PORT:-8080} --workers 2 --threads 2 --timeout 300 --keep-alive 5 run:app
