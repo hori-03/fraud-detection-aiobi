@@ -7,7 +7,7 @@ Flask-Migrate==4.0.5
 Werkzeug==3.0.1
 
 # Database
-psycopg==3.2.5  # Pour PostgreSQL - compatible Python 3.13
+psycopg2-binary==2.9.9  # Pour PostgreSQL avec SQLAlchemy
 SQLAlchemy==2.0.23
 
 # Google OAuth2
