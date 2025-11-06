@@ -1,0 +1,353 @@
+{% extends "base.html" %}
+
+{% block title %}Détails du Modèle - Aïobi{% endblock %}
+
+{% block content %}
+<div class="max-w-6xl mx-auto">
+    <!-- Back Button -->
+    <div class="mb-6">
+        <a href="{{ url_for('dashboard.models_page') }}" 
+           class="inline-flex items-center text-sm text-gray-400 hover:text-white">
+            <i class="fas fa-arrow-left mr-2"></i>
+            Retour aux modèles
+        </a>
+    </div>
+    
+    <!-- Model Header -->
+    <div class="card-aiobi p-6 mb-6">
+        <div class="flex justify-between items-start">
+            <div>
+                <h1 class="text-3xl font-bold text-white mb-2">
+                    <i class="fas fa-brain mr-3"></i>{{ model.model_name }}
+                </h1>
+                <div class="flex items-center space-x-4 text-sm text-gray-400">
+                    <span>
+                        <i class="fas fa-tag mr-1"></i>{% if model.meta_transformer_used %}Meta-Transformer{% else %}XGBoost{% endif %}
+                    </span>
+                    <span>
+                        <i class="fas fa-calendar mr-1"></i>{{ model.created_at.strftime('%d/%m/%Y %H:%M') }}
+                    </span>
+                    <span>
+                        <i class="fas fa-clock mr-1"></i>{{ (model.training_time_seconds or 0)|round(1) }}s
+                    </span>
+                </div>
+            </div>
+            
+            <div class="flex space-x-2">
+                <a href="{{ url_for('dashboard.download_model', model_id=model.id) }}" 
+                   class="inline-flex items-center px-4 py-2 border border-gray-600 shadow-sm text-sm font-medium rounded-md text-white bg-gray-800 hover:bg-gray-700">
+                    <i class="fas fa-download mr-2"></i>
+                    Télécharger
+                </a>
+                <button onclick="deleteModel({{ model.id }})" 
+                        class="inline-flex items-center px-4 py-2 border border-red-600 shadow-sm text-sm font-medium rounded-md text-red-500 bg-red-900 bg-opacity-20 hover:bg-opacity-30">
+                    <i class="fas fa-trash mr-2"></i>
+                    Supprimer
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <!-- Left Column: Stats & Metrics -->
+        <div class="lg:col-span-2 space-y-6">
+            <!-- Metrics -->
+            <div class="card-aiobi p-6">
+                <h2 class="text-lg font-semibold text-white mb-4">
+                    <i class="fas fa-chart-bar mr-2"></i>Métriques de Performance
+                </h2>
+                
+                {% if model.roc_auc or model.precision or model.recall or model.f1_score %}
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div class="text-center p-4 bg-blue-900 bg-opacity-20 rounded-lg">
+                        <p class="text-3xl font-bold text-blue-500">{{ ((model.roc_auc or 0) * 100)|round(2) }}%</p>
+                        <p class="text-sm text-gray-400 mt-1">ROC AUC</p>
+                    </div>
+                    <div class="text-center p-4 bg-green-900 bg-opacity-20 rounded-lg border-2 border-green-700">
+                        <p class="text-3xl font-bold text-green-500">{{ ((model.precision or 0) * 100)|round(2) }}%</p>
+                        <p class="text-sm text-gray-400 mt-1">Précision</p>
+                    </div>
+                    <div class="text-center p-4 bg-purple-900 bg-opacity-20 rounded-lg border-2 border-purple-700">
+                        <p class="text-3xl font-bold text-purple-500">{{ ((model.recall or 0) * 100)|round(2) }}%</p>
+                        <p class="text-sm text-gray-400 mt-1">Recall</p>
+                    </div>
+                    <div class="text-center p-4 bg-yellow-900 bg-opacity-20 rounded-lg border-2 border-yellow-700">
+                        <p class="text-3xl font-bold text-yellow-500">{{ ((model.f1_score or 0) * 100)|round(2) }}%</p>
+                        <p class="text-sm text-gray-400 mt-1">F1-Score</p>
+                    </div>
+                </div>
+                
+                <div class="mt-6 p-4 bg-gray-800 rounded-lg">
+                    <h3 class="text-sm font-semibold text-white mb-3">Détails supplémentaires</h3>
+                    <div class="grid grid-cols-2 gap-4 text-sm">
+                        <div class="flex justify-between">
+                            <span class="text-gray-400">Accuracy:</span>
+                            <span class="font-semibold text-white">{{ ((model.accuracy or 0) * 100)|round(2) }}%</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-gray-400">Taux de fraude:</span>
+                            <span class="font-semibold text-white">{{ (model.fraud_rate or 0)|round(2) }}%</span>
+                        </div>
+                    </div>
+                </div>
+                {% else %}
+                <p class="text-gray-400 text-center py-8">Aucune métrique disponible</p>
+                {% endif %}
+            </div>
+            
+            <!-- Dataset Info -->
+            <div class="card-aiobi p-6">
+                <h2 class="text-lg font-semibold text-white mb-4">
+                    <i class="fas fa-database mr-2"></i>Informations du Dataset
+                </h2>
+                
+                <div class="space-y-3">
+                    <div class="flex justify-between items-center py-2 border-b border-gray-700">
+                        <span class="text-sm text-gray-400">Dataset:</span>
+                        <span class="font-semibold text-white">{{ model.dataset_name or 'N/A' }}</span>
+                    </div>
+                    <div class="flex justify-between items-center py-2 border-b border-gray-700">
+                        <span class="text-sm text-gray-400">Taille du dataset:</span>
+                        <span class="text-sm text-white">
+                            {{ model.dataset_size|default('N/A') }} lignes
+                        </span>
+                    </div>
+                    <div class="flex justify-between items-center py-2">
+                        <span class="text-sm text-gray-400">Features:</span>
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-900 bg-opacity-30 text-blue-400">
+                            {{ model.dataset_features|default('N/A') }} features
+                        </span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Feature Engineering -->
+            {% if model.features_engineered %}
+            {% set eng_info = model.features_engineered|from_json %}
+            {% if eng_info %}
+            <div class="card-aiobi p-6">
+                <h2 class="text-lg font-semibold text-white mb-4">
+                    <i class="fas fa-cogs mr-2"></i>Feature Engineering
+                </h2>
+                
+                <!-- Résumé des compteurs -->
+                <div class="grid grid-cols-3 gap-4 mb-4">
+                    <div class="text-center p-3 bg-blue-900 bg-opacity-20 rounded-lg">
+                        <p class="text-2xl font-bold text-blue-500">{{ eng_info.counts.ai_predicted }}</p>
+                        <p class="text-xs text-gray-400">AI-Predicted</p>
+                    </div>
+                    <div class="text-center p-3 bg-green-900 bg-opacity-20 rounded-lg">
+                        <p class="text-2xl font-bold text-green-500">{{ eng_info.counts.always_on }}</p>
+                        <p class="text-xs text-gray-400">Always-On</p>
+                    </div>
+                    <div class="text-center p-3 bg-purple-900 bg-opacity-20 rounded-lg border-2 border-purple-700">
+                        <p class="text-2xl font-bold text-purple-500">{{ eng_info.counts.total }}</p>
+                        <p class="text-xs text-gray-400">Total</p>
+                    </div>
+                </div>
+                
+                <!-- Flags AI-Predicted -->
+                <div class="mt-4">
+                    <h3 class="text-sm font-semibold text-white mb-3">
+                        <i class="fas fa-robot mr-1"></i>Techniques AI-Predicted
+                    </h3>
+                    <div class="space-y-2">
+                        {% for flag_name in ['polynomial', 'interaction', 'binning', 'log_transform', 'aggregation'] %}
+                        {% if eng_info[flag_name] %}
+                        {% set flag = eng_info[flag_name] %}
+                        <div class="flex items-center justify-between p-2 bg-gray-800 rounded">
+                            <div class="flex items-center">
+                                {% if flag.activated %}
+                                <i class="fas fa-check-circle text-green-500 mr-2"></i>
+                                {% else %}
+                                <i class="fas fa-times-circle text-gray-400 mr-2"></i>
+                                {% endif %}
+                                <span class="text-sm font-medium text-white">{{ flag_name.replace('_', ' ').title() }}</span>
+                            </div>
+                            <div class="flex items-center space-x-2">
+                                <span class="text-xs text-gray-400">Score: {{ (flag.score * 100)|round(1) }}%</span>
+                                <span class="text-xs text-gray-500">| Seuil: {{ (flag.threshold * 100)|round(0) }}%</span>
+                            </div>
+                        </div>
+                        {% endif %}
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+            {% endif %}
+            
+            <!-- Training Timeline -->
+            <div class="card-aiobi p-6">
+                <h2 class="text-lg font-semibold text-white mb-4">
+                    <i class="fas fa-timeline mr-2"></i>Chronologie
+                </h2>
+                
+                <div class="flow-root">
+                    <ul class="-mb-8">
+                        <li class="relative pb-8">
+                            <div class="relative flex items-start space-x-3">
+                                <div class="relative">
+                                    <div class="h-8 w-8 rounded-full bg-blue-500 flex items-center justify-center ring-8 ring-gray-800">
+                                        <i class="fas fa-play text-white text-xs"></i>
+                                    </div>
+                                </div>
+                                <div class="min-w-0 flex-1">
+                                    <div>
+                                        <p class="text-sm font-medium text-white">Entraînement démarré</p>
+                                        <p class="text-sm text-gray-400">{{ model.created_at.strftime('%d/%m/%Y %H:%M:%S') }}</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </li>
+                        
+                        {% if model.status == 'completed' %}
+                        <li class="relative pb-8">
+                            <div class="relative flex items-start space-x-3">
+                                <div class="relative">
+                                    <div class="h-8 w-8 rounded-full bg-green-500 flex items-center justify-center ring-8 ring-gray-800">
+                                        <i class="fas fa-check text-white text-xs"></i>
+                                    </div>
+                                </div>
+                                <div class="min-w-0 flex-1">
+                                    <div>
+                                        <p class="text-sm font-medium text-white">Entraînement terminé avec succès</p>
+                                        <p class="text-sm text-gray-400">Durée: {{ (model.training_time_seconds or 0)|round(1) }}s</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </li>
+                        {% elif model.status == 'failed' %}
+                        <li class="relative pb-8">
+                            <div class="relative flex items-start space-x-3">
+                                <div class="relative">
+                                    <div class="h-8 w-8 rounded-full bg-red-500 flex items-center justify-center ring-8 ring-gray-800">
+                                        <i class="fas fa-times text-white text-xs"></i>
+                                    </div>
+                                </div>
+                                <div class="min-w-0 flex-1">
+                                    <div>
+                                        <p class="text-sm font-medium text-white">Entraînement échoué</p>
+                                        <p class="text-sm text-gray-400">Vérifiez les logs pour plus d'informations</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </li>
+                        {% endif %}
+                        
+                        <li class="relative">
+                            <div class="relative flex items-start space-x-3">
+                                <div class="relative">
+                                    <div class="h-8 w-8 rounded-full bg-purple-600 flex items-center justify-center ring-8 ring-gray-800">
+                                        <i class="fas fa-chart-line text-white text-xs"></i>
+                                    </div>
+                                </div>
+                                <div class="min-w-0 flex-1">
+                                    <div>
+                                        <p class="text-sm font-medium text-white">Modèle sauvegardé</p>
+                                        <p class="text-sm text-gray-400">Prêt pour les prédictions</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Right Column: Actions & Info -->
+        <div class="lg:col-span-1 space-y-6">
+            <!-- Quick Actions -->
+            <div class="card-aiobi p-6">
+                <h2 class="text-lg font-semibold text-white mb-4">
+                    <i class="fas fa-bolt mr-2"></i>Actions rapides
+                </h2>
+                
+                <div class="space-y-3">
+                    <a href="{{ url_for('dashboard.predict_page') }}" 
+                       class="btn-aiobi-primary w-full text-center">
+                        <i class="fas fa-chart-line mr-2"></i>
+                        Faire des prédictions
+                    </a>
+                    
+                    {% if model.result_file %}
+                    <a href="{{ url_for('dashboard.download_predictions', model_id=model.id) }}" 
+                       class="btn-aiobi-secondary w-full text-center">
+                        <i class="fas fa-file-download mr-2"></i>
+                        Télécharger résultats
+                    </a>
+                    {% endif %}
+                    
+                    <a href="{{ url_for('dashboard.download_model', model_id=model.id) }}" 
+                       class="block w-full text-center px-4 py-2 border border-gray-600 shadow-sm text-sm font-medium rounded-md text-white bg-gray-800 hover:bg-gray-700">
+                        <i class="fas fa-download mr-2"></i>
+                        Télécharger modèle (ZIP)
+                    </a>
+                </div>
+            </div>
+            
+            <!-- Usage Stats -->
+            <div class="card-aiobi p-6">
+                <h2 class="text-lg font-semibold text-white mb-4">
+                    <i class="fas fa-chart-pie mr-2"></i>Statistiques d'utilisation
+                </h2>
+                
+                <div class="space-y-4">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center">
+                            <div class="bg-white rounded-lg p-2 mr-3">
+                                <i class="fas fa-chart-line text-black"></i>
+                            </div>
+                            <span class="text-sm text-gray-400">Prédictions</span>
+                        </div>
+                        <span class="text-2xl font-bold text-white">{{ model.prediction_count }}</span>
+                    </div>
+                    
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center">
+                            <div class="bg-green-900 bg-opacity-30 rounded-lg p-2 mr-3">
+                                <i class="fas fa-clock text-green-500"></i>
+                            </div>
+                            <span class="text-sm text-gray-400">Temps d'entraînement</span>
+                        </div>
+                        <span class="text-lg font-bold text-white">{{ (model.training_time_seconds or 0)|round(1) }}s</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+async function deleteModel(modelId) {
+    if (!confirm('Êtes-vous sûr de vouloir supprimer ce modèle ? Cette action est irréversible.')) {
+        return;
+    }
+    
+    try {
+        const response = await fetch(`/delete/${modelId}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        });
+        
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            window.location.href = '{{ url_for("dashboard.models_page") }}';
+        } else {
+            alert('Erreur lors de la suppression: ' + data.message);
+        }
+    } catch (error) {
+        alert('Erreur: ' + error.message);
+    }
+}
+</script>
+{% endblock %}

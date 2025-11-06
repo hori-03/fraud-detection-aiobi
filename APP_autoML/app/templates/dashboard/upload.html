@@ -1,0 +1,798 @@
+{% extends "base.html" %}
+
+{% block title %}Upload Dataset - Aïobi{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto">
+    <h1 class="text-3xl font-bold text-white mb-8 fade-in">
+        <i class="fas fa-upload mr-3 icon-bounce"></i>Entraîner un nouveau modèle
+    </h1>
+    
+    <!-- Upload Section -->
+    <div class="card-aiobi card-hover p-6 mb-6 fade-in delay-100">
+    <h2 class="text-lg font-bold text-white mb-4">
+            1. Upload votre dataset étiqueté
+        </h2>
+        
+        <div id="drop-zone" 
+             class="border-2 border-dashed border-gray-300 rounded-lg p-12 text-center hover:border-white smooth-transition cursor-pointer shine-effect">
+            <i class="fas fa-cloud-upload-alt text-5xl text-gray-400 mb-4 icon-bounce"></i>
+            <p class="text-lg font-bold text-white mb-2">Glissez-déposez votre fichier ici</p>
+            <p class="text-sm text-gray-400 mb-4">ou cliquez pour sélectionner</p>
+            <p class="text-xs text-gray-500">Formats acceptés: CSV, XLSX, Parquet (Max 500MB)</p>
+            <input type="file" 
+                   id="file-input" 
+                   accept=".csv,.xlsx,.parquet" 
+                   class="hidden">
+        </div>
+        
+        <!-- File Info -->
+        <div id="file-info" class="hidden mt-4 p-4 bg-gray-800 border-2 border-gray-700 rounded-lg">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center">
+                    <i class="fas fa-file-alt text-white text-2xl mr-3"></i>
+                    <div>
+                        <p class="font-bold text-white" id="file-name"></p>
+                        <p class="text-sm text-gray-400" id="file-size"></p>
+                    </div>
+                </div>
+                <button id="remove-file" class="text-red-600 hover:text-red-800">
+                    <i class="fas fa-times-circle text-xl"></i>
+                </button>
+            </div>
+        </div>
+        
+        <!-- Progress Bar -->
+        <div id="progress-container" class="hidden mt-4 fade-in">
+            <div class="flex items-center justify-between mb-2">
+                <span class="text-sm font-medium text-white">Analyse en cours...</span>
+                <span class="text-sm font-medium text-white" id="progress-percentage">0%</span>
+            </div>
+            <div class="w-full bg-gray-700 rounded-full h-3 overflow-hidden">
+                <div id="progress-bar" 
+                     class="h-3 rounded-full progress-glow transition-all duration-300 bg-gradient-to-r from-indigo-500 to-purple-500" 
+                     style="width: 0%; animation: shimmer 2s infinite;"></div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Dataset Analysis Results -->
+    <div id="analysis-section" class="hidden card-aiobi card-hover p-6 mb-6 fade-in">
+    <h2 class="text-lg font-bold text-white mb-4">
+            2. Résultats de l'analyse
+        </h2>
+        
+        <div class="grid grid-cols-2 gap-4 mb-6">
+            <div class="p-4 bg-gray-800 rounded-lg border-2 border-gray-700 card-hover smooth-transition">
+                <p class="text-sm text-gray-400">Lignes</p>
+                <p class="text-2xl font-bold text-white" id="dataset-rows">-</p>
+            </div>
+            <div class="p-4 bg-gray-800 rounded-lg border-2 border-gray-700">
+                <p class="text-sm text-gray-400">Colonnes</p>
+                <p class="text-2xl font-bold text-white" id="dataset-columns">-</p>
+            </div>
+        </div>
+        
+        <!-- Target Column Detection -->
+        <div class="mb-6">
+            <label class="block text-sm font-bold text-white mb-2">
+                Colonne cible (target) détectée
+            </label>
+            <div class="flex items-center space-x-4">
+                <select id="target-column" 
+                        class="input-aiobi flex-1">
+                    <option value="">Sélectionnez une colonne...</option>
+                </select>
+                <span id="detection-badge" class="badge-aiobi badge-aiobi-success">
+                    <i class="fas fa-check-circle mr-1"></i> Détecté automatiquement
+                </span>
+            </div>
+            <p class="mt-2 text-xs text-gray-500">
+                <i class="fas fa-info-circle mr-1"></i>
+                La colonne cible est détectée automatiquement via analyse statistique + sémantique
+            </p>
+        </div>
+        
+        <!-- Model Configuration -->
+        <div class="mb-6">
+            <label class="block text-sm font-bold text-white mb-2">
+                Nom du modèle
+            </label>
+            <input type="text" 
+                   id="model-name" 
+                   placeholder="fraud_model_v1"
+                   class="input-aiobi w-full">
+        </div>
+        
+        <div class="mb-6">
+            <label class="flex items-center">
+                <input type="checkbox" 
+                       id="use-metatransformer" 
+                       checked
+                       class="rounded border-gray-300 text-white shadow-sm focus:border-white focus:ring-white">
+                <span class="ml-2 text-sm font-medium text-white">
+                    Utiliser Meta-Transformer (recommandé)
+                </span>
+            </label>
+            <p class="mt-1 ml-6 text-xs text-gray-400">
+                Le Meta-Transformer prédit automatiquement les meilleurs hyperparamètres
+            </p>
+        </div>
+        
+        <div class="mb-6">
+            <label class="flex items-center">
+                <input type="checkbox" 
+                       id="unlabeled-dataset" 
+                       class="rounded border-gray-300 text-white shadow-sm focus:border-white focus:ring-white">
+                <span class="ml-2 text-sm font-medium text-white">
+                    Dataset non étiqueté (sans colonne fraude/target)
+                </span>
+            </label>
+            <p class="mt-1 ml-6 text-xs text-gray-400">
+                <i class="fas fa-info-circle mr-1"></i>
+                Cochez cette case si votre dataset ne contient PAS de colonne indiquant les fraudes
+            </p>
+            <div id="unlabeled-warning" class="hidden mt-2 ml-6 p-3 bg-yellow-50 border-l-4 border-yellow-400 rounded-r">
+                <p class="text-xs text-yellow-800">
+                    <i class="fas fa-exclamation-triangle mr-1"></i>
+                    <strong>Mode non étiqueté activé:</strong> Un modèle ensemble sera créé et sauvegardé. 
+                    Vous pourrez ensuite l'utiliser dans "Faire des prédictions" pour analyser vos données.
+                </p>
+            </div>
+        </div>
+        
+        <!-- Training Button -->
+        <button id="train-btn" 
+                class="btn-aiobi-primary w-full py-3">
+            <i class="fas fa-rocket mr-2"></i>
+            Lancer l'entraînement
+        </button>
+    </div>
+    
+    <!-- Training Progress -->
+    <div id="training-section" class="hidden card-aiobi card-hover p-6 relative overflow-hidden">
+        <!-- Particules animées en arrière-plan -->
+        <div class="absolute inset-0 pointer-events-none">
+            <div class="particle" style="width: 30px; height: 30px; left: 10%; top: 20%;"></div>
+            <div class="particle" style="width: 40px; height: 40px; left: 80%; top: 60%; animation-delay: 1s;"></div>
+            <div class="particle" style="width: 25px; height: 25px; left: 60%; top: 30%; animation-delay: 2s;"></div>
+        </div>
+        
+        <h2 class="text-lg font-bold text-white mb-4 fade-in">
+            3. Entraînement en cours...
+        </h2>
+        
+        <div class="text-center py-8 relative z-10">
+            <!-- Engrenage animé avec effet glow -->
+            <div class="inline-block relative mb-6">
+                <i class="fas fa-cog text-white text-6xl animate-spin" style="animation-duration: 2s;"></i>
+                <div class="absolute inset-0 animate-ping opacity-20">
+                    <i class="fas fa-cog text-indigo-500 text-6xl"></i>
+                </div>
+            </div>
+            
+            <p class="text-xl font-bold text-white mb-2 fade-in">Entraînement du modèle en cours</p>
+            
+            <!-- Timer et infos en temps réel -->
+            <div class="grid grid-cols-3 gap-4 my-6 max-w-2xl mx-auto">
+                <div class="p-3 bg-gray-800 bg-opacity-50 rounded-lg border border-gray-700 card-hover">
+                    <p class="text-xs text-gray-400">Temps écoulé</p>
+                    <p class="text-lg font-bold text-white" id="training-timer">00:00</p>
+                </div>
+                <div class="p-3 bg-gray-800 bg-opacity-50 rounded-lg border border-gray-700 card-hover">
+                    <p class="text-xs text-gray-400">Dataset</p>
+                    <p class="text-lg font-bold text-white" id="training-dataset-size">-</p>
+                </div>
+                <div class="p-3 bg-gray-800 bg-opacity-50 rounded-lg border border-gray-700 card-hover">
+                    <p class="text-xs text-gray-400">Étape</p>
+                    <p class="text-lg font-bold text-white" id="training-step">1/4</p>
+                </div>
+            </div>
+            
+            <!-- Barre de progression avec gradient animé -->
+            <div class="mb-6 max-w-md mx-auto">
+                <div class="flex items-center justify-between mb-2">
+                    <span class="text-sm font-medium text-gray-400">Progression globale</span>
+                    <span class="text-sm font-bold text-white" id="training-progress-percent">0%</span>
+                </div>
+                <div class="w-full bg-gray-700 rounded-full h-3 overflow-hidden">
+                    <div id="training-progress-bar" 
+                         class="h-3 rounded-full progress-glow transition-all duration-500 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 progress-fill" 
+                         style="width: 0%; background-size: 200% 100%; animation: gradientShift 3s ease infinite;">
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Messages motivants aléatoires -->
+            <p class="text-sm text-gray-400 italic mb-6 fade-in" id="motivational-message">
+                🚀 Analyse des patterns de fraude...
+            </p>
+            
+            <!-- Steps avec animations -->
+            <div class="mt-6 space-y-3 text-left max-w-md mx-auto">
+                <div id="step-1" class="flex items-center text-sm p-3 rounded-lg bg-gray-800 bg-opacity-30 border border-gray-700 smooth-transition">
+                    <div class="w-8 h-8 rounded-full bg-green-500 flex items-center justify-center mr-3 animate-bounce">
+                        <i class="fas fa-check text-white"></i>
+                    </div>
+                    <span class="text-white font-medium">Analyse des features</span>
+                    <span class="ml-auto text-xs text-green-400">✓ Terminé</span>
+                </div>
+                
+                <div id="step-2" class="flex items-center text-sm p-3 rounded-lg bg-indigo-900 bg-opacity-20 border-2 border-indigo-500 smooth-transition badge-pulse">
+                    <div class="w-8 h-8 rounded-full bg-indigo-500 flex items-center justify-center mr-3">
+                        <i class="fas fa-spinner fa-spin text-white"></i>
+                    </div>
+                    <span class="font-bold text-white">Entraînement XGBoost</span>
+                    <span class="ml-auto text-xs text-indigo-400" id="xgboost-progress">25%</span>
+                </div>
+                
+                <div id="step-3" class="flex items-center text-sm p-3 rounded-lg bg-gray-800 bg-opacity-30 border border-gray-700 smooth-transition opacity-50">
+                    <div class="w-8 h-8 rounded-full bg-gray-600 flex items-center justify-center mr-3">
+                        <i class="fas fa-circle text-white text-xs"></i>
+                    </div>
+                    <span class="text-gray-400">Calibration</span>
+                    <span class="ml-auto text-xs text-gray-500">En attente</span>
+                </div>
+                
+                <div id="step-4" class="flex items-center text-sm p-3 rounded-lg bg-gray-800 bg-opacity-30 border border-gray-700 smooth-transition opacity-50">
+                    <div class="w-8 h-8 rounded-full bg-gray-600 flex items-center justify-center mr-3">
+                        <i class="fas fa-circle text-white text-xs"></i>
+                    </div>
+                    <span class="text-gray-400">Sauvegarde du modèle</span>
+                    <span class="ml-auto text-xs text-gray-500">En attente</span>
+                </div>
+            </div>
+            
+            <!-- Bouton annuler -->
+            <div class="mt-8">
+                <button onclick="cancelTraining()" 
+                        class="text-sm text-red-400 hover:text-red-300 smooth-transition hover:underline">
+                    <i class="fas fa-times-circle mr-1"></i>
+                    Annuler l'entraînement
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Success Message -->
+    <div id="success-section" class="hidden card-aiobi card-hover p-6 fade-in">
+        <div class="text-center py-8">
+            <!-- Icône de succès animée -->
+            <div class="mx-auto h-20 w-20 flex items-center justify-center rounded-full bg-green-500 mb-4 animate-bounce">
+                <i class="fas fa-check text-white text-4xl"></i>
+            </div>
+            
+            <h2 class="text-3xl font-bold text-white mb-2">
+                🎉 Modèle entraîné avec succès !
+            </h2>
+            <p class="text-gray-400 mb-8">Votre modèle est prêt à faire des prédictions</p>
+            
+            <!-- Metrics avec animations -->
+            <div id="metrics-display" class="grid grid-cols-2 gap-4 max-w-lg mx-auto mb-8">
+                <!-- Will be filled dynamically -->
+            </div>
+            
+            <div class="flex justify-center space-x-4">
+                <a href="#" id="view-model-btn" 
+                   class="btn-aiobi-primary btn-gradient-animated shine-effect">
+                    <i class="fas fa-eye mr-2"></i>
+                    Voir le modèle
+                </a>
+                <a href="{{ url_for('dashboard.predict_page') }}" 
+                   class="btn-aiobi-secondary smooth-transition hover-scale">
+                    <i class="fas fa-chart-line mr-2"></i>
+                    Faire des prédictions
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let selectedFile = null;
+let analysisData = null;
+
+// Unlabeled dataset checkbox handler
+document.getElementById('unlabeled-dataset').addEventListener('change', function() {
+    const isUnlabeled = this.checked;
+    const targetColumnSection = document.getElementById('target-column').closest('.mb-6');
+    const unlabeledWarning = document.getElementById('unlabeled-warning');
+    const trainBtn = document.getElementById('train-btn');
+    
+    if (isUnlabeled) {
+        // Hide target column selection
+        if (targetColumnSection) targetColumnSection.style.display = 'none';
+        // Show warning
+        unlabeledWarning.classList.remove('hidden');
+        // Change button text
+        trainBtn.textContent = 'Appliquer le modèle';
+        trainBtn.innerHTML = '<i class="fas fa-magic mr-2"></i>Appliquer le modèle';
+    } else {
+        // Show target column selection
+        if (targetColumnSection) targetColumnSection.style.display = 'block';
+        // Hide warning
+        unlabeledWarning.classList.add('hidden');
+        // Restore button text
+        trainBtn.innerHTML = '<i class="fas fa-play mr-2"></i>Commencer l\'entraînement';
+    }
+});
+
+// Drop zone handlers
+const dropZone = document.getElementById('drop-zone');
+const fileInput = document.getElementById('file-input');
+
+dropZone.addEventListener('click', () => fileInput.click());
+
+dropZone.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    dropZone.classList.add('border-black', 'bg-gray-50');
+});
+
+dropZone.addEventListener('dragleave', () => {
+    dropZone.classList.remove('border-black', 'bg-gray-50');
+});
+
+dropZone.addEventListener('drop', (e) => {
+    e.preventDefault();
+    dropZone.classList.remove('border-black', 'bg-gray-50');
+    const files = e.dataTransfer.files;
+    if (files.length > 0) {
+        handleFile(files[0]);
+    }
+});
+
+fileInput.addEventListener('change', (e) => {
+    if (e.target.files.length > 0) {
+        handleFile(e.target.files[0]);
+    }
+});
+
+document.getElementById('remove-file').addEventListener('click', () => {
+    selectedFile = null;
+    fileInput.value = '';
+    document.getElementById('file-info').classList.add('hidden');
+    document.getElementById('analysis-section').classList.add('hidden');
+});
+
+function handleFile(file) {
+    selectedFile = file;
+    
+    // Display file info
+    document.getElementById('file-name').textContent = file.name;
+    document.getElementById('file-size').textContent = formatBytes(file.size);
+    document.getElementById('file-info').classList.remove('hidden');
+    
+    // Analyze dataset
+    analyzeDataset(file);
+}
+
+async function analyzeDataset(file) {
+    const formData = new FormData();
+    formData.append('file', file);
+    
+    // Show progress
+    document.getElementById('progress-container').classList.remove('hidden');
+    animateProgress();
+    
+    try {
+        const response = await fetch('/api/analyze', {
+            method: 'POST',
+            body: formData
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            analysisData = data;
+            displayAnalysis(data);
+        } else {
+            alert('Erreur: ' + data.message);
+        }
+    } catch (error) {
+        alert('Erreur lors de l\'analyse: ' + error.message);
+    } finally {
+        document.getElementById('progress-container').classList.add('hidden');
+    }
+}
+
+function displayAnalysis(data) {
+    // Show analysis section
+    document.getElementById('analysis-section').classList.remove('hidden');
+    
+    // Display stats
+    document.getElementById('dataset-rows').textContent = data.dataset_size.toLocaleString();
+    document.getElementById('dataset-columns').textContent = data.num_features;
+    
+    // Populate target column dropdown
+    const targetSelect = document.getElementById('target-column');
+    targetSelect.innerHTML = '<option value="">Sélectionnez une colonne...</option>';
+    
+    data.columns.forEach(col => {
+        const option = document.createElement('option');
+        option.value = col;
+        option.textContent = col;
+        if (col === data.target_column) {
+            option.selected = true;
+        }
+        targetSelect.appendChild(option);
+    });
+    
+    // Set default model name
+    const timestamp = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+    document.getElementById('model-name').value = `fraud_model_${timestamp}`;
+}
+
+// Train button
+document.getElementById('train-btn').addEventListener('click', async () => {
+    const targetColumn = document.getElementById('target-column').value;
+    const modelName = document.getElementById('model-name').value;
+    const useMetatransformer = document.getElementById('use-metatransformer').checked;
+    const isUnlabeled = document.getElementById('unlabeled-dataset').checked;
+    
+    // Validation based on dataset type
+    if (isUnlabeled) {
+        // MODE UNLABELED: Créer le modèle ensemble (sans afficher les résultats ici)
+        // Pas de confirmation nécessaire, on continue directement
+        
+        // Hide analysis, show training (for progress indicator)
+        document.getElementById('analysis-section').classList.add('hidden');
+        document.getElementById('training-section').classList.remove('hidden');
+        
+        try {
+            const response = await fetch('/api/apply_unlabeled', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    filepath: analysisData.filepath,
+                    model_name: modelName || 'unlabeled_predictions'
+                })
+            });
+            
+            const data = await response.json();
+            
+            if (data.success) {
+                // ✅ Afficher message de succès et rediriger vers /models
+                alert(`✅ Modèle ensemble créé avec succès!\n\n` +
+                      `Le modèle a été sauvegardé.\n` +
+                      `Vous pouvez maintenant l'utiliser dans "Faire des prédictions"\n` +
+                      `pour analyser vos données.`);
+                
+                // Rediriger vers /models
+                window.location.href = '/models';
+            } else {
+                alert('Erreur: ' + data.error);
+                document.getElementById('training-section').classList.add('hidden');
+                document.getElementById('analysis-section').classList.remove('hidden');
+            }
+        } catch (error) {
+            alert('Erreur lors de la création du modèle: ' + error.message);
+            document.getElementById('training-section').classList.add('hidden');
+            document.getElementById('analysis-section').classList.remove('hidden');
+        }
+        
+        return;
+    }
+    
+    // MODE LABELED: Training normal
+    if (!targetColumn) {
+        alert('Veuillez sélectionner une colonne cible');
+        return;
+    }
+    
+    if (!modelName) {
+        alert('Veuillez entrer un nom de modèle');
+        return;
+    }
+    
+    // Hide analysis, show training
+    document.getElementById('analysis-section').classList.add('hidden');
+    document.getElementById('training-section').classList.remove('hidden');
+    
+    // 🎨 Démarrer les animations et le timer
+    startTrainingAnimations();
+    
+    try {
+        const response = await fetch('/api/train', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                filepath: analysisData.filepath,
+                model_name: modelName,
+                target_column: targetColumn,
+                use_metatransformer: useMetatransformer,
+                is_unlabeled: isUnlabeled
+            })
+        });
+        
+        const data = await response.json();
+        
+        // Arrêter les animations
+        stopTrainingAnimations();
+        
+        if (data.success) {
+            // 🎊 Confetti et notification de succès
+            window.AiobiAnimations.celebrateSuccess();
+            window.AiobiAnimations.showToast('🎉 Modèle entraîné avec succès !', 'success', 4000);
+            displaySuccess(data);
+        } else {
+            window.AiobiAnimations.showToast('❌ Erreur: ' + data.error, 'error');
+            document.getElementById('training-section').classList.add('hidden');
+            document.getElementById('analysis-section').classList.remove('hidden');
+        }
+    } catch (error) {
+        stopTrainingAnimations();
+        window.AiobiAnimations.showToast('❌ Erreur: ' + error.message, 'error');
+        document.getElementById('training-section').classList.add('hidden');
+        document.getElementById('analysis-section').classList.remove('hidden');
+    }
+});
+
+function displaySuccess(data) {
+    document.getElementById('training-section').classList.add('hidden');
+    document.getElementById('success-section').classList.remove('hidden');
+    
+    // Display only Accuracy metric avec animation
+    const metricsDiv = document.getElementById('metrics-display');
+    const metrics = data.metrics;
+    
+    metricsDiv.innerHTML = `
+        <div class="p-6 bg-yellow-900 bg-opacity-20 rounded-lg border-2 border-yellow-700 card-hover hover-glow smooth-transition">
+            <p class="text-sm text-gray-400 mb-2">Accuracy</p>
+            <p class="text-5xl font-bold text-yellow-500">${(metrics.accuracy * 100).toFixed(2)}%</p>
+        </div>
+        <div class="p-6 bg-green-900 bg-opacity-20 rounded-lg border-2 border-green-700 card-hover hover-glow smooth-transition">
+            <p class="text-sm text-gray-400 mb-2">Statut</p>
+            <p class="text-2xl font-bold text-green-500">
+                <i class="fas fa-check-circle"></i> Prêt
+            </p>
+        </div>
+    `;
+    
+    // Set view model link
+    document.getElementById('view-model-btn').href = `/model/${data.history_id}`;
+}
+
+function displayUnlabeledSuccess(data) {
+    document.getElementById('training-section').classList.add('hidden');
+    document.getElementById('success-section').classList.remove('hidden');
+    
+    // Display statistics for unlabeled predictions
+    const metricsDiv = document.getElementById('metrics-display');
+    const stats = data.stats;
+    
+    metricsDiv.innerHTML = `
+        <div class="space-y-4 text-left">
+            <h3 class="text-lg font-semibold text-white mb-4">
+                🚀 Prédictions Mode Ensemble
+            </h3>
+            
+            <div class="grid grid-cols-3 gap-4">
+                <div class="bg-red-900 bg-opacity-20 p-4 rounded-lg">
+                    <p class="text-xs text-gray-400 mb-1">HIGH RISK</p>
+                    <p class="text-2xl font-bold text-red-500">${stats.high_risk}</p>
+                    <p class="text-xs text-gray-500">>15% fraude</p>
+                </div>
+                
+                <div class="bg-yellow-900 bg-opacity-20 p-4 rounded-lg">
+                    <p class="text-xs text-gray-400 mb-1">MEDIUM RISK</p>
+                    <p class="text-2xl font-bold text-yellow-500">${stats.medium_risk}</p>
+                    <p class="text-xs text-gray-500">5-15% fraude</p>
+                </div>
+                
+                <div class="bg-green-900 bg-opacity-20 p-4 rounded-lg">
+                    <p class="text-xs text-gray-400 mb-1">LOW RISK</p>
+                    <p class="text-2xl font-bold text-green-500">${stats.low_risk}</p>
+                    <p class="text-xs text-gray-500"><5% fraude</p>
+                </div>
+            </div>
+            
+            <div class="mt-4 p-3 bg-blue-900 bg-opacity-20 rounded-lg">
+                <p class="text-xs text-gray-400">Stabilité des prédictions</p>
+                <p class="text-lg font-semibold text-blue-500">${(stats.prediction_stability * 100).toFixed(1)}%</p>
+            </div>
+            
+            <div class="mt-4 text-xs text-gray-400">
+                <p>✅ Ensemble de ${data.methods_used.top_k_models} modèles</p>
+                <p>✅ Anomaly Detection active</p>
+                <p>✅ Calibration des probabilités</p>
+                <p>🔍 ${stats.anomalies_detected} anomalies détectées (incluses dans HIGH/MEDIUM RISK)</p>
+            </div>
+        </div>
+    `;
+    
+    // Update buttons for download
+    const viewBtn = document.getElementById('view-model-btn');
+    viewBtn.textContent = 'Télécharger Prédictions';
+    viewBtn.innerHTML = '<i class="fas fa-download mr-2"></i>Télécharger CSV';
+    viewBtn.href = data.download_url;
+    viewBtn.download = '';
+}
+
+function animateProgress() {
+    let progress = 0;
+    const interval = setInterval(() => {
+        progress += Math.random() * 10;
+        if (progress > 90) progress = 90;
+        
+        document.getElementById('progress-bar').style.width = progress + '%';
+        document.getElementById('progress-percentage').textContent = Math.round(progress) + '%';
+        
+        if (progress >= 90) {
+            clearInterval(interval);
+        }
+    }, 200);
+}
+
+function formatBytes(bytes) {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
+}
+
+// 🎨 ANIMATIONS D'ENTRAÎNEMENT
+let trainingTimer = null;
+let trainingStartTime = null;
+let currentStep = 0;
+let progressInterval = null;
+
+const motivationalMessages = [
+    '🚀 Analyse des patterns de fraude...',
+    '🔍 Détection des anomalies en cours...',
+    '🧠 Optimisation des hyperparamètres...',
+    '⚡ Calibration des probabilités...',
+    '🎯 Affinement du modèle...',
+    '💪 Presque terminé, tenez bon !',
+    '✨ Magie de l\'IA en action...',
+    '🔥 Performance maximale atteinte !'
+];
+
+function startTrainingAnimations() {
+    // Timer
+    trainingStartTime = Date.now();
+    trainingTimer = setInterval(updateTimer, 1000);
+    
+    // Dataset size
+    if (analysisData && analysisData.rows) {
+        document.getElementById('training-dataset-size').textContent = 
+            `${analysisData.rows.toLocaleString()} lignes`;
+    }
+    
+    // Progress bar simulation
+    simulateTrainingProgress();
+    
+    // Messages motivants
+    changeMotivationalMessage();
+    setInterval(changeMotivationalMessage, 5000);
+    
+    // Animation des steps
+    animateSteps();
+}
+
+function stopTrainingAnimations() {
+    if (trainingTimer) clearInterval(trainingTimer);
+    if (progressInterval) clearInterval(progressInterval);
+}
+
+function updateTimer() {
+    const elapsed = Math.floor((Date.now() - trainingStartTime) / 1000);
+    const minutes = Math.floor(elapsed / 60);
+    const seconds = elapsed % 60;
+    document.getElementById('training-timer').textContent = 
+        `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+}
+
+function changeMotivationalMessage() {
+    const message = motivationalMessages[Math.floor(Math.random() * motivationalMessages.length)];
+    const msgElement = document.getElementById('motivational-message');
+    msgElement.classList.remove('fade-in');
+    setTimeout(() => {
+        msgElement.textContent = message;
+        msgElement.classList.add('fade-in');
+    }, 100);
+}
+
+function simulateTrainingProgress() {
+    let progress = 0;
+    progressInterval = setInterval(() => {
+        // Progression réaliste (ralentit vers la fin)
+        if (progress < 30) {
+            progress += Math.random() * 3;
+        } else if (progress < 60) {
+            progress += Math.random() * 2;
+        } else if (progress < 85) {
+            progress += Math.random() * 1;
+        } else if (progress < 95) {
+            progress += Math.random() * 0.5;
+        }
+        
+        progress = Math.min(progress, 95);
+        
+        document.getElementById('training-progress-bar').style.width = progress + '%';
+        document.getElementById('training-progress-percent').textContent = Math.round(progress) + '%';
+        document.getElementById('xgboost-progress').textContent = Math.round(progress) + '%';
+        
+        // Mise à jour des steps
+        updateStepProgress(progress);
+        
+    }, 500);
+}
+
+function updateStepProgress(progress) {
+    const step = document.getElementById('training-step');
+    
+    if (progress < 25) {
+        step.textContent = '1/4';
+    } else if (progress < 50) {
+        step.textContent = '2/4';
+        completeStep(1);
+        activateStep(2);
+    } else if (progress < 75) {
+        step.textContent = '3/4';
+        completeStep(2);
+        activateStep(3);
+    } else if (progress < 95) {
+        step.textContent = '4/4';
+        completeStep(3);
+        activateStep(4);
+    }
+}
+
+function animateSteps() {
+    // Step 1 déjà complété
+    activateStep(2); // XGBoost en cours
+}
+
+function completeStep(stepNum) {
+    const stepEl = document.getElementById(`step-${stepNum}`);
+    if (!stepEl) return;
+    
+    stepEl.classList.remove('badge-pulse', 'bg-indigo-900', 'border-indigo-500', 'opacity-50');
+    stepEl.classList.add('bg-gray-800', 'border-gray-700');
+    
+    const icon = stepEl.querySelector('.w-8');
+    icon.classList.remove('bg-indigo-500', 'bg-gray-600');
+    icon.classList.add('bg-green-500', 'animate-bounce');
+    icon.innerHTML = '<i class="fas fa-check text-white"></i>';
+    
+    const status = stepEl.querySelector('.ml-auto');
+    status.textContent = '✓ Terminé';
+    status.classList.remove('text-indigo-400', 'text-gray-500');
+    status.classList.add('text-green-400');
+}
+
+function activateStep(stepNum) {
+    const stepEl = document.getElementById(`step-${stepNum}`);
+    if (!stepEl) return;
+    
+    stepEl.classList.remove('opacity-50', 'bg-gray-800', 'border-gray-700');
+    stepEl.classList.add('bg-indigo-900', 'bg-opacity-20', 'border-2', 'border-indigo-500', 'badge-pulse');
+    
+    const icon = stepEl.querySelector('.w-8');
+    icon.classList.remove('bg-gray-600', 'bg-green-500');
+    icon.classList.add('bg-indigo-500');
+    icon.innerHTML = '<i class="fas fa-spinner fa-spin text-white"></i>';
+    
+    const status = stepEl.querySelector('.ml-auto');
+    status.textContent = 'En cours...';
+    status.classList.remove('text-gray-500', 'text-green-400');
+    status.classList.add('text-indigo-400');
+}
+
+function cancelTraining() {
+    if (confirm('Êtes-vous sûr de vouloir annuler l\'entraînement ?')) {
+        stopTrainingAnimations();
+        window.AiobiAnimations.showToast('⚠️ Entraînement annulé', 'warning');
+        document.getElementById('training-section').classList.add('hidden');
+        document.getElementById('analysis-section').classList.remove('hidden');
+    }
+}
+</script>
+{% endblock %}

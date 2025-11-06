@@ -1,0 +1,57 @@
+# Environments
+.env
+.env.local
+*.env
+.venv
+venv/
+ENV/
+env/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+dist/
+build/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Logs
+logs/
+*.log
+
+# Data files (trop gros pour Git, seront exclus ou sur S3)
+data/automl_models/
+data/datasets/*.csv
+data/models/*.joblib
+data/parquet/
+data/results/
+data/predicted_configs/
+data/metamodel_data/
+data/Feature_importance/
+data/structure/
+data/top5/
+
+# IMPORTANT: Garder le metatransformer (sera dans l'image Docker)
+!data/metatransformer_training/*.pth
+!data/metatransformer_training/*.json
+
+# Uploads et temp
+APP_autoML/uploads/
+APP_autoML/temp/
+APP_autoML/instance/
+
+# Models locaux
+APP_autoML/models/
+
+# OS files
+.DS_Store
+Thumbs.db 

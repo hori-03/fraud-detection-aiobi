@@ -1,0 +1,649 @@
+{
+  "timestamp": "2025-11-05T16:34:04.659863",
+  "total_models": 40,
+  "successful": 40,
+  "failed": 0,
+  "total_time_seconds": 85.91995930671692,
+  "results": [
+    {
+      "success": true,
+      "dataset_name": "dataset1",
+      "training_time": 3.6163527965545654,
+      "test_f1": 0.9694323144104804,
+      "test_auc": 1.0,
+      "n_features": 20,
+      "engineering_flags": [
+        0.8520287275314331,
+        0.0,
+        0.9885246753692627,
+        1.0,
+        0.9581457376480103
+      ],
+      "meta_transformer_used": true
+    },
+    {
+      "success": true,
+      "dataset_name": "dataset10",
+      "training_time": 0.6485848426818848,
+      "test_f1": 0.9074410163339383,
+      "test_auc": 0.996029677446997,
+      "n_features": 20,
+      "engineering_flags": [
+        1.0,
+        0.0,
+        1.0,
+        1.0,
+        0.8733488321304321
+      ],
+      "meta_transformer_used": true
+    },
+    {
+      "success": true,
+      "dataset_name": "dataset11",
+      "training_time": 0.9459238052368164,
+      "test_f1": 0.8936170212765957,
+      "test_auc": 0.997016507834749,
+      "n_features": 20,
+      "engineering_flags": [
+        1.0,
+        0.0,
+        0.9523530602455139,
+        1.0,
+        0.7434820532798767
+      ],
+      "meta_transformer_used": true
+    },
+    {
+      "success": true,
+      "dataset_name": "dataset12",
+      "training_time": 0.918724775314331,
+      "test_f1": 0.9591836734693877,
+      "test_auc": 0.999853164556962,
+      "n_features": 20,
+      "engineering_flags": [
+        1.0,
+        0.0,
+        1.0,
+        1.0,
+        0.9250410795211792
+      ],
+      "meta_transformer_used": true
+    },
+    {
+      "success": true,
+      "dataset_name": "dataset13",
+      "training_time": 0.9267594814300537,
+      "test_f1": 0.9707112970711297,
+      "test_auc": 0.9997497000080979,
+      "n_features": 20,
+      "engineering_flags": [
+        1.0,
+        0.0,
+        0.9791388511657715,
+        1.0,
+        0.8799393177032471
+      ],
+      "meta_transformer_used": true
+    },
+    {
+      "success": true,
+      "dataset_name": "dataset14",
+      "training_time": 0.9078836441040039,
+      "test_f1": 0.9284064665127021,
+      "test_auc": 0.999401762929866,
+      "n_features": 20,
+      "engineering_flags": [
+        1.0,
+        0.0,
+        0.9613950848579407,
+        1.0,
+        1.0
+      ],
+      "meta_transformer_used": true
+    },
+    {
+      "success": true,
+      "dataset_name": "dataset15",
+      "training_time": 1.587439775466919,
+      "test_f1": 0.9876543209876543,
+      "test_auc": 0.9999064292520993,
+      "n_features": 20,
+      "engineering_flags": [
+        1.0,
+        0.0,
+        0.9615436792373657,
+        1.0,
+        0.9708461165428162
+      ],
+      "meta_transformer_used": true
+    },
+    {
+      "success": true,
+      "dataset_name": "dataset16",
+      "training_time": 1.6624891757965088,
+      "test_f1": 0.9682539682539683,
+      "test_auc": 0.999961620873019,
+      "n_features": 17,
+      "engineering_flags": [
+        1.0,
+        0.0,
+        0.8795680403709412,
+        1.0,
+        0.9857686758041382
+      ],
+      "meta_transformer_used": true
+    },
+    {
+      "success": true,
+      "dataset_name": "dataset17",
+      "training_time": 1.4641075134277344,
+      "test_f1": 0.9534883720930233,
+      "test_auc": 0.9996610735411692,
+      "n_features": 20,
+      "engineering_flags": [
+        1.0,
+        0.01153861079365015,
+        0.8844634294509888,
+        1.0,
+        1.0
+      ],
+      "meta_transformer_used": true
+    },
+    {
+      "success": true,
+      "dataset_name": "dataset18",
+      "training_time": 1.9409070014953613,
+      "test_f1": 0.9712313003452244,
+      "test_auc": 0.9996935455429717,
+      "n_features": 20,
+      "engineering_flags": [
+        1.0,
+        0.0,
+        0.9620048403739929,
+        1.0,
+        1.0
+      ],
+      "meta_transformer_used": true
+    },
+    {
+      "success": true,
+      "dataset_name": "dataset19",
+      "training_time": 1.4577949047088623,
+      "test_f1": 0.9565217391304348,
+      "test_auc": 0.9997144546379794,
+      "n_features": 20,
+      "engineering_flags": [
+        0.9594635367393494,
+        0.0,
+        1.0,
+        1.0,
+        0.838578462600708
+      ],
+      "meta_transformer_used": true
+    },
+    {
+      "success": true,
+      "dataset_name": "dataset2",
+      "training_time": 0.7282273769378662,
+      "test_f1": 1.0,
+      "test_auc": 1.0,
+      "n_features": 20,
+      "engineering_flags": [
+        1.0,
+        0.0,
+        0.9980924725532532,
+        1.0,
+        0.7459483742713928
+      ],
+      "meta_transformer_used": true
+    },
+    {
+      "success": true,
+      "dataset_name": "dataset20",
+      "training_time": 0.7068386077880859,
+      "test_f1": 1.0,
+      "test_auc": 1.0,
+      "n_features": 20,
+      "engineering_flags": [
+        1.0,
+        0.2858820855617523,
+        1.0,
+        1.0,
+        0.8514931201934814
+      ],
+      "meta_transformer_used": true
+    },
+    {
+      "success": true,
+      "dataset_name": "dataset21",
+      "training_time": 1.8007526397705078,
+      "test_f1": 0.9411764705882353,
+      "test_auc": 0.9999492063492064,
+      "n_features": 20,
+      "engineering_flags": [
+        0.8599730134010315,
+        0.0,
+        1.0,
+        1.0,
+        0.9375265836715698
+      ],
+      "meta_transformer_used": true
+    },
+    {
+      "success": true,
+      "dataset_name": "dataset22",
+      "training_time": 0.987699031829834,
+      "test_f1": 0.6563876651982379,
+      "test_auc": 0.9805134102009102,
+      "n_features": 20,
+      "engineering_flags": [
+        0.9106793999671936,
+        0.0,
+        0.9581329822540283,
+        0.6701141595840454,
+        1.0
+      ],
+      "meta_transformer_used": true
+    },
+    {
+      "success": true,
+      "dataset_name": "dataset23",
+      "training_time": 1.5303735733032227,
+      "test_f1": 0.7214611872146118,
+      "test_auc": 0.9976692143232067,
+      "n_features": 20,
+      "engineering_flags": [
+        1.0,
+        0.10845847427845001,
+        1.0,
+        0.9106810092926025,
+        1.0
+      ],
+      "meta_transformer_used": true
+    },
+    {
+      "success": true,
+      "dataset_name": "dataset24",
+      "training_time": 1.4017081260681152,
+      "test_f1": 0.772609819121447,
+      "test_auc": 0.993104328088156,
+      "n_features": 20,
+      "engineering_flags": [
+        1.0,
+        0.0,
+        0.9909669756889343,
+        1.0,
+        1.0
+      ],
+      "meta_transformer_used": true
+    },
+    {
+      "success": true,
+      "dataset_name": "dataset25",
+      "training_time": 1.082087516784668,
+      "test_f1": 0.9316770186335404,
+      "test_auc": 0.9928104108734068,
+      "n_features": 20,
+      "engineering_flags": [
+        0.8053767085075378,
+        0.1508454829454422,
+        0.9750120043754578,
+        0.5153900384902954,
+        0.8176784515380859
+      ],
+      "meta_transformer_used": true
+    },
+    {
+      "success": true,
+      "dataset_name": "dataset26",
+      "training_time": 0.9621188640594482,
+      "test_f1": 1.0,
+      "test_auc": 1.0,
+      "n_features": 20,
+      "engineering_flags": [
+        1.0,
+        0.0,
+        0.9418729543685913,
+        1.0,
+        0.8304416537284851
+      ],
+      "meta_transformer_used": true
+    },
+    {
+      "success": true,
+      "dataset_name": "dataset27",
+      "training_time": 0.8980007171630859,
+      "test_f1": 1.0,
+      "test_auc": 1.0,
+      "n_features": 20,
+      "engineering_flags": [
+        0.8784271478652954,
+        0.0,
+        0.9626508951187134,
+        1.0,
+        0.9527724981307983
+      ],
+      "meta_transformer_used": true
+    },
+    {
+      "success": true,
+      "dataset_name": "dataset28",
+      "training_time": 0.8022797107696533,
+      "test_f1": 0.997920997920998,
+      "test_auc": 1.0,
+      "n_features": 20,
+      "engineering_flags": [
+        0.9179307222366333,
+        0.0,
+        1.0,
+        0.8771578073501587,
+        0.76010662317276
+      ],
+      "meta_transformer_used": true
+    },
+    {
+      "success": true,
+      "dataset_name": "dataset29",
+      "training_time": 2.2260875701904297,
+      "test_f1": 0.5404411764705882,
+      "test_auc": 0.9945145749159139,
+      "n_features": 20,
+      "engineering_flags": [
+        1.0,
+        0.0,
+        0.9286823272705078,
+        0.9061748385429382,
+        0.7075320482254028
+      ],
+      "meta_transformer_used": true
+    },
+    {
+      "success": true,
+      "dataset_name": "dataset3",
+      "training_time": 0.7315967082977295,
+      "test_f1": 0.9878542510121457,
+      "test_auc": 0.9999574451369613,
+      "n_features": 20,
+      "engineering_flags": [
+        1.0,
+        0.0,
+        1.0,
+        1.0,
+        0.9715386629104614
+      ],
+      "meta_transformer_used": true
+    },
+    {
+      "success": true,
+      "dataset_name": "dataset30",
+      "training_time": 1.5810346603393555,
+      "test_f1": 0.3918813427010148,
+      "test_auc": 0.9590235164064724,
+      "n_features": 20,
+      "engineering_flags": [
+        1.0,
+        0.0,
+        0.9139460325241089,
+        0.9102330207824707,
+        0.7571078538894653
+      ],
+      "meta_transformer_used": true
+    },
+    {
+      "success": true,
+      "dataset_name": "dataset31",
+      "training_time": 2.8018910884857178,
+      "test_f1": 0.7199519230769231,
+      "test_auc": 0.9970829637242657,
+      "n_features": 20,
+      "engineering_flags": [
+        0.8096388578414917,
+        0.0,
+        1.0,
+        1.0,
+        0.765360951423645
+      ],
+      "meta_transformer_used": true
+    },
+    {
+      "success": true,
+      "dataset_name": "dataset32",
+      "training_time": 6.981444835662842,
+      "test_f1": 0.8592531801395158,
+      "test_auc": 0.9992086726945294,
+      "n_features": 20,
+      "engineering_flags": [
+        0.9548450708389282,
+        0.0282323956489563,
+        0.9319744110107422,
+        1.0,
+        0.8392417430877686
+      ],
+      "meta_transformer_used": true
+    },
+    {
+      "success": true,
+      "dataset_name": "dataset33",
+      "training_time": 9.955233573913574,
+      "test_f1": 0.8424203549283729,
+      "test_auc": 0.9993870388087333,
+      "n_features": 20,
+      "engineering_flags": [
+        1.0,
+        0.0,
+        0.7680912613868713,
+        0.9212990403175354,
+        1.0
+      ],
+      "meta_transformer_used": true
+    },
+    {
+      "success": true,
+      "dataset_name": "dataset34",
+      "training_time": 6.41300630569458,
+      "test_f1": 1.0,
+      "test_auc": 1.0,
+      "n_features": 20,
+      "engineering_flags": [
+        1.0,
+        0.07229457050561905,
+        0.854776918888092,
+        1.0,
+        0.8112000823020935
+      ],
+      "meta_transformer_used": true
+    },
+    {
+      "success": true,
+      "dataset_name": "dataset35",
+      "training_time": 13.040035009384155,
+      "test_f1": 0.6985074626865672,
+      "test_auc": 0.9972467609725834,
+      "n_features": 20,
+      "engineering_flags": [
+        1.0,
+        0.0,
+        1.0,
+        1.0,
+        0.5230776071548462
+      ],
+      "meta_transformer_used": true
+    },
+    {
+      "success": true,
+      "dataset_name": "dataset36",
+      "training_time": 1.9861485958099365,
+      "test_f1": 0.8,
+      "test_auc": 0.9996379909266662,
+      "n_features": 20,
+      "engineering_flags": [
+        0.7845541834831238,
+        0.0,
+        1.0,
+        1.0,
+        0.8904299736022949
+      ],
+      "meta_transformer_used": true
+    },
+    {
+      "success": true,
+      "dataset_name": "dataset37",
+      "training_time": 2.1828043460845947,
+      "test_f1": 0.8571428571428571,
+      "test_auc": 1.0,
+      "n_features": 20,
+      "engineering_flags": [
+        0.8226895332336426,
+        0.0,
+        0.970897912979126,
+        1.0,
+        0.911283016204834
+      ],
+      "meta_transformer_used": true
+    },
+    {
+      "success": true,
+      "dataset_name": "dataset38",
+      "training_time": 2.0969200134277344,
+      "test_f1": 0.16279069767441862,
+      "test_auc": 0.9599008730953175,
+      "n_features": 20,
+      "engineering_flags": [
+        1.0,
+        0.0,
+        1.0,
+        1.0,
+        0.728427529335022
+      ],
+      "meta_transformer_used": true
+    },
+    {
+      "success": true,
+      "dataset_name": "dataset39",
+      "training_time": 1.9990966320037842,
+      "test_f1": 0.7619047619047619,
+      "test_auc": 0.9996785127836506,
+      "n_features": 20,
+      "engineering_flags": [
+        1.0,
+        0.0,
+        1.0,
+        1.0,
+        0.9445874691009521
+      ],
+      "meta_transformer_used": true
+    },
+    {
+      "success": true,
+      "dataset_name": "dataset4",
+      "training_time": 0.9577064514160156,
+      "test_f1": 0.7338842975206612,
+      "test_auc": 0.9859476957729899,
+      "n_features": 20,
+      "engineering_flags": [
+        1.0,
+        0.0,
+        0.8504279851913452,
+        0.8981728553771973,
+        0.8781575560569763
+      ],
+      "meta_transformer_used": true
+    },
+    {
+      "success": true,
+      "dataset_name": "dataset40",
+      "training_time": 2.439420461654663,
+      "test_f1": 0.44357976653696496,
+      "test_auc": 0.9947328654312239,
+      "n_features": 20,
+      "engineering_flags": [
+        0.9174637198448181,
+        0.0,
+        1.0,
+        0.9049026370048523,
+        0.713381290435791
+      ],
+      "meta_transformer_used": true
+    },
+    {
+      "success": true,
+      "dataset_name": "dataset5",
+      "training_time": 0.7354350090026855,
+      "test_f1": 0.4077530509691314,
+      "test_auc": 0.9469659574468086,
+      "n_features": 20,
+      "engineering_flags": [
+        0.958695113658905,
+        0.0764140635728836,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "meta_transformer_used": true
+    },
+    {
+      "success": true,
+      "dataset_name": "dataset6",
+      "training_time": 0.6171054840087891,
+      "test_f1": 1.0,
+      "test_auc": 1.0,
+      "n_features": 20,
+      "engineering_flags": [
+        1.0,
+        0.0,
+        1.0,
+        0.8056375980377197,
+        0.7655700445175171
+      ],
+      "meta_transformer_used": true
+    },
+    {
+      "success": true,
+      "dataset_name": "dataset7",
+      "training_time": 0.6404721736907959,
+      "test_f1": 1.0,
+      "test_auc": 1.0,
+      "n_features": 20,
+      "engineering_flags": [
+        1.0,
+        0.0,
+        0.8860146403312683,
+        1.0,
+        0.8022521734237671
+      ],
+      "meta_transformer_used": true
+    },
+    {
+      "success": true,
+      "dataset_name": "dataset8",
+      "training_time": 0.815201997756958,
+      "test_f1": 0.4604651162790698,
+      "test_auc": 0.93410639260552,
+      "n_features": 20,
+      "engineering_flags": [
+        0.9642035961151123,
+        0.0,
+        1.0,
+        0.8944745063781738,
+        0.8462037444114685
+      ],
+      "meta_transformer_used": true
+    },
+    {
+      "success": true,
+      "dataset_name": "dataset9",
+      "training_time": 0.6944339275360107,
+      "test_f1": 0.9166666666666666,
+      "test_auc": 0.9988314461860822,
+      "n_features": 20,
+      "engineering_flags": [
+        1.0,
+        0.04743022471666336,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "meta_transformer_used": true
+    }
+  ]
+}

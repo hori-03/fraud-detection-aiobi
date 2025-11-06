@@ -1,0 +1,214 @@
+{% extends "base.html" %}
+
+{% block title %}Gestion des Licences - Aïobi{% endblock %}
+
+{% block content %}
+<div class="container-aiobi fade-in">
+    <!-- Header -->
+    <div class="flex items-center justify-between mb-8">
+        <div>
+            <h1 class="text-3xl font-bold text-white flex items-center">
+                <i class="fas fa-key mr-3 text-purple-500"></i>
+                Gestion des Licences
+            </h1>
+            <p class="text-gray-400 mt-2">{{ licenses.total }} licence(s) total</p>
+        </div>
+        <div class="flex gap-3">
+            <a href="{{ url_for('admin.create_license') }}" class="btn-primary">
+                <i class="fas fa-plus mr-2"></i>Créer une licence
+            </a>
+            <a href="{{ url_for('admin.index') }}" class="btn-secondary">
+                <i class="fas fa-arrow-left mr-2"></i>Retour
+            </a>
+        </div>
+    </div>
+
+    <!-- Filtres -->
+    <div class="card-aiobi mb-6">
+        <form method="get" class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <!-- Type de licence -->
+            <div>
+                <label class="block text-gray-400 text-sm mb-2">Type de licence</label>
+                <select name="license_type" class="input-aiobi w-full">
+                    <option value="">Tous</option>
+                    <option value="trial" {% if request.args.get('license_type') == 'trial' %}selected{% endif %}>Trial</option>
+                    <option value="basic" {% if request.args.get('license_type') == 'basic' %}selected{% endif %}>Basic</option>
+                    <option value="premium" {% if request.args.get('license_type') == 'premium' %}selected{% endif %}>Premium</option>
+                    <option value="enterprise" {% if request.args.get('license_type') == 'enterprise' %}selected{% endif %}>Enterprise</option>
+                </select>
+            </div>
+            
+            <!-- Statut -->
+            <div>
+                <label class="block text-gray-400 text-sm mb-2">Statut</label>
+                <select name="status" class="input-aiobi w-full">
+                    <option value="">Tous</option>
+                    <option value="active" {% if request.args.get('status') == 'active' %}selected{% endif %}>Actives</option>
+                    <option value="expired" {% if request.args.get('status') == 'expired' %}selected{% endif %}>Expirées</option>
+                </select>
+            </div>
+            
+            <div class="flex items-end gap-2">
+                <button type="submit" class="btn-primary flex-1">
+                    <i class="fas fa-search mr-2"></i>Filtrer
+                </button>
+                <a href="{{ url_for('admin.licenses') }}" class="btn-secondary">
+                    <i class="fas fa-times"></i>
+                </a>
+            </div>
+        </form>
+    </div>
+
+    <!-- Liste des licences -->
+    <div class="card-aiobi">
+        <div class="overflow-x-auto">
+            <table class="w-full">
+                <thead class="border-b border-gray-700">
+                    <tr>
+                        <th class="text-left text-gray-400 py-3 px-4">Utilisateur</th>
+                        <th class="text-left text-gray-400 py-3 px-4">Type</th>
+                        <th class="text-left text-gray-400 py-3 px-4">Clé</th>
+                        <th class="text-left text-gray-400 py-3 px-4">Expiration</th>
+                        <th class="text-left text-gray-400 py-3 px-4">Limites</th>
+                        <th class="text-left text-gray-400 py-3 px-4">Statut</th>
+                        <th class="text-left text-gray-400 py-3 px-4">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for license in licenses.items %}
+                    <tr class="border-b border-gray-700 hover:bg-gray-700 transition-colors duration-200">
+                        <td class="py-4 px-4">
+                            <a href="{{ url_for('admin.user_detail', user_id=license.user.id) }}" 
+                               class="text-blue-500 hover:text-blue-400">
+                                {{ license.user.username }}
+                            </a>
+                            <p class="text-gray-400 text-sm">{{ license.user.email }}</p>
+                        </td>
+                        <td class="py-4 px-4">
+                            {% if license.license_type == 'trial' %}
+                            <span class="text-xs bg-gray-500/20 text-gray-400 px-2 py-1 rounded">TRIAL</span>
+                            {% elif license.license_type == 'basic' %}
+                            <span class="text-xs bg-blue-500/20 text-blue-500 px-2 py-1 rounded">BASIC</span>
+                            {% elif license.license_type == 'premium' %}
+                            <span class="text-xs bg-purple-500/20 text-purple-500 px-2 py-1 rounded">PREMIUM</span>
+                            {% elif license.license_type == 'enterprise' %}
+                            <span class="text-xs bg-yellow-500/20 text-yellow-500 px-2 py-1 rounded">ENTERPRISE</span>
+                            {% endif %}
+                        </td>
+                        <td class="py-4 px-4">
+                            <code class="text-xs text-blue-400 bg-gray-800 px-2 py-1 rounded">{{ license.license_key }}</code>
+                        </td>
+                        <td class="py-4 px-4 text-gray-300">
+                            {% if license.expires_at %}
+                                {{ license.expires_at.strftime('%d/%m/%Y') }}
+                                {% if not license.is_active %}
+                                <span class="text-red-500 text-xs block">(Expirée)</span>
+                                {% endif %}
+                            {% else %}
+                                <span class="text-green-500">Jamais</span>
+                            {% endif %}
+                        </td>
+                        <td class="py-4 px-4 text-gray-300">
+                            <p class="text-sm">Modèles: {{ license.max_models if license.max_models else '∞' }}</p>
+                            <p class="text-sm">Prédictions: {{ license.max_predictions if license.max_predictions else '∞' }}</p>
+                        </td>
+                        <td class="py-4 px-4">
+                            {% if license.is_active %}
+                            <span class="text-xs bg-green-500/20 text-green-500 px-2 py-1 rounded">
+                                <i class="fas fa-check-circle mr-1"></i>Active
+                            </span>
+                            {% else %}
+                            <span class="text-xs bg-red-500/20 text-red-500 px-2 py-1 rounded">
+                                <i class="fas fa-times-circle mr-1"></i>Expirée
+                            </span>
+                            {% endif %}
+                        </td>
+                        <td class="py-4 px-4">
+                            <div class="flex gap-2">
+                                <form method="post" action="{{ url_for('admin.toggle_license_status', license_id=license.id) }}" class="inline">
+                                    <button type="submit" class="text-blue-500 hover:text-blue-400" title="Activer/Désactiver">
+                                        <i class="fas fa-power-off"></i>
+                                    </button>
+                                </form>
+                                <button onclick="showExtendModal({{ license.id }})" class="text-green-500 hover:text-green-400" title="Prolonger">
+                                    <i class="fas fa-calendar-plus"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Pagination -->
+        {% if licenses.pages > 1 %}
+        <div class="flex items-center justify-between mt-6 pt-6 border-t border-gray-700">
+            <p class="text-gray-400 text-sm">
+                Page {{ licenses.page }} sur {{ licenses.pages }} ({{ licenses.total }} licences)
+            </p>
+            <div class="flex gap-2">
+                {% if licenses.has_prev %}
+                <a href="{{ url_for('admin.licenses', page=licenses.prev_num, license_type=request.args.get('license_type', ''), status=request.args.get('status', '')) }}" 
+                   class="btn-secondary">
+                    <i class="fas fa-chevron-left"></i>
+                </a>
+                {% endif %}
+                
+                {% for page_num in licenses.iter_pages(left_edge=1, right_edge=1, left_current=1, right_current=2) %}
+                    {% if page_num %}
+                        {% if page_num == licenses.page %}
+                        <span class="px-4 py-2 bg-purple-500 text-white rounded-lg">{{ page_num }}</span>
+                        {% else %}
+                        <a href="{{ url_for('admin.licenses', page=page_num, license_type=request.args.get('license_type', ''), status=request.args.get('status', '')) }}" 
+                           class="px-4 py-2 bg-gray-700 text-gray-300 rounded-lg hover:bg-gray-600">{{ page_num }}</a>
+                        {% endif %}
+                    {% else %}
+                        <span class="px-2 text-gray-500">...</span>
+                    {% endif %}
+                {% endfor %}
+                
+                {% if licenses.has_next %}
+                <a href="{{ url_for('admin.licenses', page=licenses.next_num, license_type=request.args.get('license_type', ''), status=request.args.get('status', '')) }}" 
+                   class="btn-secondary">
+                    <i class="fas fa-chevron-right"></i>
+                </a>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Modal de prolongation -->
+<div id="extendModal" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+    <div class="bg-gray-800 rounded-lg p-6 max-w-md w-full mx-4">
+        <h3 class="text-xl font-semibold text-white mb-4">Prolonger la licence</h3>
+        <form id="extendForm" method="post">
+            <div class="mb-4">
+                <label class="block text-gray-400 text-sm mb-2">Nombre de jours</label>
+                <input type="number" name="days" value="30" min="1" max="365" class="input-aiobi w-full">
+            </div>
+            <div class="flex gap-3">
+                <button type="submit" class="btn-primary flex-1">
+                    <i class="fas fa-check mr-2"></i>Prolonger
+                </button>
+                <button type="button" onclick="hideExtendModal()" class="btn-secondary flex-1">
+                    <i class="fas fa-times mr-2"></i>Annuler
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+function showExtendModal(licenseId) {
+    document.getElementById('extendForm').action = '/admin/licenses/' + licenseId + '/extend';
+    document.getElementById('extendModal').classList.remove('hidden');
+}
+
+function hideExtendModal() {
+    document.getElementById('extendModal').classList.add('hidden');
+}
+</script>
+{% endblock %}

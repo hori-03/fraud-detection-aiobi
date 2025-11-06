@@ -1,0 +1,170 @@
+{% extends "base.html" %}
+
+{% block title %}Activation de Licence - Aïobi{% endblock %}
+
+{% block content %}
+<div class="min-h-screen gradient-aiobi py-12 px-4 sm:px-6 lg:px-8">
+    <div class="max-w-4xl mx-auto fade-in-up">
+        <!-- Header avec logo -->
+        <div class="text-center mb-8">
+            <img src="{{ url_for('static', filename='images/Aiobi.jpeg') }}" alt="Aïobi" class="mx-auto h-16 w-auto rounded-xl shadow-lg mb-4">
+            <h1 class="text-3xl font-bold text-white">Gestion des Licences</h1>
+        </div>
+        
+        <!-- Statut de la licence actuelle -->
+        {% if active_license %}
+        <div class="card-aiobi p-6 mb-6">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h2 class="text-2xl font-bold text-white">Licence Active</h2>
+                    <p class="text-gray-400 mt-1">Votre compte dispose d'une licence valide</p>
+                </div>
+                <div class="text-right">
+                    <span class="badge-aiobi 
+                        {% if active_license.license_type == 'enterprise' %}badge-aiobi-black
+                        {% else %}bg-green-900 bg-opacity-30 text-green-500 border-green-700{% endif %}">
+                        {{ active_license.license_type.upper() }}
+                    </span>
+                </div>
+            </div>
+            
+            <div class="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div class="bg-gray-800 p-4 rounded-lg border-2 border-gray-700">
+                    <p class="text-sm text-gray-400">Type de licence</p>
+                    <p class="text-lg font-semibold text-white">{{ active_license.license_type.capitalize() }}</p>
+                </div>
+                <div class="bg-gray-800 p-4 rounded-lg border-2 border-gray-700">
+                    <p class="text-sm text-gray-400">Modèles max</p>
+                    <p class="text-lg font-semibold text-white">{{ active_license.max_models }}</p>
+                </div>
+                <div class="bg-gray-800 p-4 rounded-lg border-2 border-gray-700">
+                    <p class="text-sm text-gray-400">Jours restants</p>
+                    <p class="text-lg font-semibold text-white">
+                        {% if active_license.days_remaining() %}
+                            {{ active_license.days_remaining() }} jours
+                        {% else %}
+                            Illimité
+                        {% endif %}
+                    </p>
+                </div>
+            </div>
+            
+            <div class="mt-6">
+                <p class="text-sm text-gray-400 mb-2">Clé de licence</p>
+                <code class="block bg-black text-green-400 px-4 py-3 rounded-lg font-mono text-sm">
+                    {{ active_license.license_key }}
+                </code>
+            </div>
+        </div>
+        {% else %}
+        <!-- Pas de licence -->
+        <div class="bg-yellow-50 border-l-4 border-yellow-400 p-6 mb-6 rounded-lg">
+            <div class="flex">
+                <div class="flex-shrink-0">
+                    <i class="fas fa-exclamation-triangle text-yellow-400 text-2xl"></i>
+                </div>
+                <div class="ml-3">
+                    <h3 class="text-sm font-medium text-yellow-800">Licence requise</h3>
+                    <p class="mt-2 text-sm text-yellow-700">
+                        Vous devez activer une licence pour utiliser les fonctionnalités Aïobi.
+                        Entrez votre clé de licence ci-dessous pour commencer.
+                    </p>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Formulaire d'activation -->
+        <div class="card-aiobi p-8">
+            <h2 class="text-2xl font-bold text-white mb-6">
+                <i class="fas fa-key mr-2"></i>
+                {% if active_license %}Changer de licence{% else %}Activer une licence{% endif %}
+            </h2>
+            
+            <form method="POST" action="{{ url_for('auth.license_activation') }}">
+                <div class="mb-6">
+                    <label for="license_key" class="block text-sm font-medium text-white mb-2">
+                        <i class="fas fa-ticket-alt mr-2"></i>Clé de licence
+                    </label>
+                    <input 
+                        type="text" 
+                        id="license_key" 
+                        name="license_key"
+                        class="input-aiobi w-full font-mono"
+                        placeholder="XXXX-XXXX-XXXX-XXXX"
+                        required
+                    >
+                    <p class="mt-2 text-sm text-gray-400">
+                        Entrez la clé de licence fournie par votre administrateur
+                    </p>
+                </div>
+                
+                <div class="flex items-center justify-between">
+                    <a href="{{ url_for('dashboard.index') }}" class="text-gray-400 hover:text-white font-medium">
+                        <i class="fas fa-arrow-left mr-2"></i>Retour au tableau de bord
+                    </a>
+                    <button 
+                        type="submit" 
+                        class="btn-aiobi-primary"
+                    >
+                        Activer la licence
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Types de licences disponibles -->
+        <div class="mt-8 card-aiobi p-8">
+            <h3 class="text-xl font-bold text-white mb-4">
+                <i class="fas fa-layer-group mr-2"></i>Types de licences disponibles
+            </h3>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                <!-- Trial -->
+                <div class="border-2 border-gray-700 rounded-lg p-4 hover:shadow-lg transition bg-gray-800">
+                    <h4 class="font-semibold text-white">Trial</h4>
+                    <p class="text-sm text-gray-400 mt-2">14 jours d'essai</p>
+                    <ul class="mt-3 text-sm text-gray-300 space-y-1">
+                        <li>✓ 3 modèles max</li>
+                        <li>✓ 50 MB par dataset</li>
+                        <li>✓ Support communautaire</li>
+                    </ul>
+                </div>
+                
+                <!-- Basic -->
+                <div class="border-2 border-gray-700 rounded-lg p-4 hover:shadow-lg transition bg-gray-800">
+                    <h4 class="font-semibold text-white">Basic</h4>
+                    <p class="text-sm text-gray-400 mt-2">Pour démarrer</p>
+                    <ul class="mt-3 text-sm text-gray-300 space-y-1">
+                        <li>✓ 10 modèles max</li>
+                        <li>✓ 100 MB par dataset</li>
+                        <li>✓ Support email</li>
+                    </ul>
+                </div>
+                
+                <!-- Premium -->
+                <div class="border-2 border-purple-700 rounded-lg p-4 bg-purple-900 bg-opacity-30 hover:shadow-lg transition">
+                    <h4 class="font-semibold text-purple-400">Premium</h4>
+                    <p class="text-sm text-purple-300 mt-2">Le plus populaire</p>
+                    <ul class="mt-3 text-sm text-purple-200 space-y-1">
+                        <li>✓ 50 modèles max</li>
+                        <li>✓ 500 MB par dataset</li>
+                        <li>✓ Support prioritaire</li>
+                    </ul>
+                </div>
+                
+                <!-- Enterprise -->
+                <div class="border-2 border-white rounded-lg p-4 bg-white text-black hover:shadow-lg transition">
+                    <h4 class="font-semibold">Enterprise</h4>
+                    <p class="text-sm text-gray-700 mt-2">Sans limites</p>
+                    <ul class="mt-3 text-sm space-y-1">
+                        <li>✓ Modèles illimités</li>
+                        <li>✓ Datasets illimités</li>
+                        <li>✓ Support dédié 24/7</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

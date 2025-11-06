@@ -1,0 +1,12 @@
+# Railway Configuration
+# Ce fichier doit être à la racine du repo (fraud-project/)
+
+[build]
+builder = "DOCKERFILE"
+# Contexte de build = racine du projet
+dockerfilePath = "APP_autoML/Dockerfile"
+
+[deploy]
+startCommand = "gunicorn --bind 0.0.0.0:$PORT --workers 2 --threads 2 --timeout 300 --keep-alive 5 run:app"
+restartPolicyType = "ON_FAILURE"
+restartPolicyMaxRetries = 10

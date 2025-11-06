@@ -1,0 +1,218 @@
+{% extends "base.html" %}
+
+{% block title %}Détails Utilisateur - Aïobi{% endblock %}
+
+{% block content %}
+<div class="container-aiobi fade-in">
+    <!-- Header -->
+    <div class="flex items-center justify-between mb-8">
+        <div>
+            <h1 class="text-3xl font-bold text-white flex items-center">
+                <i class="fas fa-user mr-3 text-blue-500"></i>
+                Détails de l'utilisateur
+            </h1>
+        </div>
+        <a href="{{ url_for('admin.users') }}" class="btn-secondary">
+            <i class="fas fa-arrow-left mr-2"></i>Retour
+        </a>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <!-- Informations utilisateur -->
+        <div class="lg:col-span-1">
+            <div class="card-aiobi">
+                <!-- Avatar et nom -->
+                <div class="text-center mb-6">
+                    <div class="w-24 h-24 mx-auto rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-white text-3xl font-semibold mb-4">
+                        {{ user.username[0].upper() }}
+                    </div>
+                    <h2 class="text-2xl font-bold text-white">{{ user.username }}</h2>
+                    <p class="text-gray-400 mt-1">{{ user.email }}</p>
+                    
+                    {% if user.is_admin %}
+                    <span class="inline-block mt-3 bg-red-500/20 text-red-500 px-3 py-1 rounded text-sm">
+                        <i class="fas fa-shield-alt mr-1"></i>ADMINISTRATEUR
+                    </span>
+                    {% endif %}
+                </div>
+
+                <!-- Statut -->
+                <div class="mb-6 p-4 bg-gray-700 rounded-lg">
+                    <p class="text-gray-400 text-sm mb-2">Statut du compte</p>
+                    {% if user.is_active %}
+                    <span class="inline-block bg-green-500/20 text-green-500 px-3 py-1 rounded text-sm">
+                        <i class="fas fa-check-circle mr-1"></i>Actif
+                    </span>
+                    {% else %}
+                    <span class="inline-block bg-red-500/20 text-red-500 px-3 py-1 rounded text-sm">
+                        <i class="fas fa-times-circle mr-1"></i>Inactif
+                    </span>
+                    {% endif %}
+                </div>
+
+                <!-- Type de connexion -->
+                <div class="mb-6 p-4 bg-gray-700 rounded-lg">
+                    <p class="text-gray-400 text-sm mb-2">Type de connexion</p>
+                    {% if user.google_id %}
+                    <span class="inline-block bg-blue-500/20 text-blue-500 px-3 py-1 rounded text-sm">
+                        <i class="fab fa-google mr-1"></i>Google OAuth
+                    </span>
+                    {% else %}
+                    <span class="inline-block bg-gray-500/20 text-gray-400 px-3 py-1 rounded text-sm">
+                        <i class="fas fa-envelope mr-1"></i>Email / Mot de passe
+                    </span>
+                    {% endif %}
+                </div>
+
+                <!-- Dates -->
+                <div class="space-y-3">
+                    <div>
+                        <p class="text-gray-400 text-sm">Date d'inscription</p>
+                        <p class="text-white">{{ user.created_at.strftime('%d/%m/%Y à %H:%M') if user.created_at else 'N/A' }}</p>
+                    </div>
+                </div>
+
+                <!-- Actions -->
+                <div class="mt-6 pt-6 border-t border-gray-600 space-y-2">
+                    {% if not user.is_admin or user.id != current_user.id %}
+                    <form method="post" action="{{ url_for('admin.toggle_user_status', user_id=user.id) }}">
+                        <button type="submit" class="w-full btn-secondary">
+                            {% if user.is_active %}
+                            <i class="fas fa-ban mr-2"></i>Désactiver le compte
+                            {% else %}
+                            <i class="fas fa-check mr-2"></i>Activer le compte
+                            {% endif %}
+                        </button>
+                    </form>
+                    {% endif %}
+                    
+                    {% if user.id != current_user.id %}
+                    <form method="post" action="{{ url_for('admin.toggle_admin_status', user_id=user.id) }}">
+                        <button type="submit" class="w-full btn-secondary">
+                            {% if user.is_admin %}
+                            <i class="fas fa-user-minus mr-2"></i>Retirer les droits admin
+                            {% else %}
+                            <i class="fas fa-user-shield mr-2"></i>Promouvoir en admin
+                            {% endif %}
+                        </button>
+                    </form>
+                    
+                    <form method="post" action="{{ url_for('admin.delete_user', user_id=user.id) }}" 
+                          onsubmit="return confirm('Êtes-vous sûr de vouloir supprimer cet utilisateur ? Cette action est irréversible.');">
+                        <button type="submit" class="w-full bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg transition-colors duration-200">
+                            <i class="fas fa-trash mr-2"></i>Supprimer l'utilisateur
+                        </button>
+                    </form>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Licences et historique -->
+        <div class="lg:col-span-2 space-y-6">
+            <!-- Licences -->
+            <div class="card-aiobi">
+                <h3 class="text-xl font-semibold text-white mb-4">
+                    <i class="fas fa-key mr-2 text-purple-500"></i>
+                    Licences ({{ licenses|length }})
+                </h3>
+                
+                {% if licenses %}
+                <div class="space-y-3">
+                    {% for license in licenses %}
+                    <div class="p-4 bg-gray-700 rounded-lg">
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="text-white font-medium">{{ license.license_type.upper() }}</span>
+                            {% if license.is_active %}
+                            <span class="text-xs bg-green-500/20 text-green-500 px-2 py-1 rounded">
+                                <i class="fas fa-check-circle mr-1"></i>Active
+                            </span>
+                            {% else %}
+                            <span class="text-xs bg-red-500/20 text-red-500 px-2 py-1 rounded">
+                                <i class="fas fa-times-circle mr-1"></i>Expirée
+                            </span>
+                            {% endif %}
+                        </div>
+                        <p class="text-gray-400 text-sm">Clé: <code class="text-blue-400">{{ license.license_key }}</code></p>
+                        <p class="text-gray-400 text-sm">Expire le: {{ license.expires_at.strftime('%d/%m/%Y') if license.expires_at else 'Jamais' }}</p>
+                        <p class="text-gray-400 text-sm">Modèles max: {{ license.max_models if license.max_models else 'Illimité' }}</p>
+                        
+                        <div class="flex gap-2 mt-3">
+                            <form method="post" action="{{ url_for('admin.toggle_license_status', license_id=license.id) }}" class="inline">
+                                <button type="submit" class="text-xs bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded">
+                                    {% if license.is_active %}Désactiver{% else %}Activer{% endif %}
+                                </button>
+                            </form>
+                            <form method="post" action="{{ url_for('admin.extend_license', license_id=license.id) }}" class="inline">
+                                <input type="number" name="days" value="30" min="1" max="365" class="w-16 px-2 py-1 bg-gray-800 text-white text-xs rounded mr-1">
+                                <button type="submit" class="text-xs bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded">
+                                    Prolonger
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <p class="text-gray-400 text-center py-8">Aucune licence pour cet utilisateur</p>
+                {% endif %}
+                
+                <div class="mt-4">
+                    <a href="{{ url_for('admin.create_license') }}?user_id={{ user.id }}" class="btn-primary w-full text-center">
+                        <i class="fas fa-plus mr-2"></i>Créer une nouvelle licence
+                    </a>
+                </div>
+            </div>
+
+            <!-- Historique d'entraînement -->
+            <div class="card-aiobi">
+                <h3 class="text-xl font-semibold text-white mb-4">
+                    <i class="fas fa-history mr-2 text-green-500"></i>
+                    Historique d'entraînement ({{ trainings|length }})
+                </h3>
+                
+                {% if trainings %}
+                <div class="overflow-x-auto">
+                    <table class="w-full">
+                        <thead class="border-b border-gray-700">
+                            <tr>
+                                <th class="text-left text-gray-400 py-2 px-3 text-sm">Date</th>
+                                <th class="text-left text-gray-400 py-2 px-3 text-sm">Modèle</th>
+                                <th class="text-left text-gray-400 py-2 px-3 text-sm">Statut</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for training in trainings %}
+                            <tr class="border-b border-gray-700">
+                                <td class="py-3 px-3 text-gray-300 text-sm">
+                                    {{ training.created_at.strftime('%d/%m/%Y %H:%M') if training.created_at else 'N/A' }}
+                                </td>
+                                <td class="py-3 px-3 text-white text-sm">{{ training.model_name or 'Sans nom' }}</td>
+                                <td class="py-3 px-3 text-sm">
+                                    {% if training.status == 'completed' %}
+                                    <span class="text-green-500">
+                                        <i class="fas fa-check-circle mr-1"></i>Terminé
+                                    </span>
+                                    {% elif training.status == 'failed' %}
+                                    <span class="text-red-500">
+                                        <i class="fas fa-times-circle mr-1"></i>Échoué
+                                    </span>
+                                    {% else %}
+                                    <span class="text-yellow-500">
+                                        <i class="fas fa-clock mr-1"></i>En cours
+                                    </span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <p class="text-gray-400 text-center py-8">Aucun entraînement pour cet utilisateur</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

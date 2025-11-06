@@ -1,0 +1,76 @@
+# .dockerignore à la racine du projet (fraud-project/)
+# Railway va build depuis la racine avec ce fichier
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+dist/
+build/
+
+# Environments
+.env
+.env.local
+.venv
+venv/
+ENV/
+env/
+
+# VS Code
+.vscode/
+
+# Git
+.git/
+.gitignore
+
+# Tests
+tests/
+.pytest_cache/
+
+# Documentation
+docs/
+*.md
+!README.md
+
+# Logs
+logs/
+*.log
+
+# Uploads (ne pas inclure dans l'image)
+APP_autoML/uploads/
+APP_autoML/temp/
+
+# Models locaux (ne pas inclure, ils sont sur S3)
+APP_autoML/models/
+data/automl_models/
+data/datasets/
+data/Feature_importance/
+data/metamodel_data/
+data/metatransformer_training/*.csv
+data/metatransformer_training/*.json
+data/metatransformer_training/*.txt
+data/models/
+data/parquet/
+data/predicted_configs/
+data/results/
+data/structure/
+data/top5/
+
+# IMPORTANT: Ne pas exclure le .pth
+!data/metatransformer_training/*.pth
+
+# Base scripts
+base/
+scripts/
+
+# Anciens fichiers
+ancien_meta/
+
+# Instance data
+APP_autoML/instance/
+
+# Migration versions (optionnel, si tu veux recréer en prod)
+# APP_autoML/migrations/versions/

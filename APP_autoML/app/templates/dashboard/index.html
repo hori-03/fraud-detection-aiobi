@@ -1,0 +1,307 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - Aïobi{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <!-- Header -->
+    <div class="flex justify-between items-center fade-in delay-100">
+        <div>
+            <h1 class="text-3xl font-bold gradient-aiobi-text">
+                <i class="fas fa-chart-line mr-3"></i>Dashboard
+            </h1>
+            <p class="mt-1 text-sm text-gray-400">
+                Bienvenue, <span class="font-semibold text-white">{{ current_user.username }}</span> ! Voici un aperçu de vos activités.
+            </p>
+        </div>
+        <a href="{{ url_for('dashboard.upload_page') }}" 
+           class="btn-aiobi-primary btn-gradient-animated shine-effect">
+            <i class="fas fa-plus mr-2"></i>
+            Nouveau modèle
+        </a>
+    </div>
+    
+    <!-- Stats Cards -->
+    <div class="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
+        <!-- Total Models -->
+        <div class="card-aiobi card-hover fade-in delay-200">
+            <div class="p-5">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0">
+                        <div class="rounded-xl bg-black p-3 smooth-transition hover-scale">
+                            <i class="fas fa-brain text-white text-xl icon-bounce"></i>
+                        </div>
+                    </div>
+                    <div class="ml-5 w-0 flex-1">
+                        <dl>
+                            <dt class="text-sm font-medium text-gray-400 truncate">
+                                Modèles entraînés
+                            </dt>
+                            <dd class="flex items-baseline">
+                                <div class="text-2xl font-bold text-white">
+                                    {{ stats.total_models }}
+                                </div>
+                            </dd>
+                        </dl>
+                    </div>
+                </div>
+            </div>
+            <div class="bg-gray-800 px-5 py-3 rounded-b-lg">
+                <div class="text-sm">
+                    <a href="{{ url_for('dashboard.models_page') }}" class="font-medium text-white hover:underline smooth-transition">
+                        Voir tous les modèles <i class="fas fa-arrow-right ml-1 icon-bounce"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Total Predictions -->
+        <div class="card-aiobi card-hover fade-in delay-300">
+            <div class="p-5">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0">
+                        <div class="rounded-xl bg-green-600 p-3 smooth-transition hover-scale">
+                            <i class="fas fa-chart-bar text-white text-xl icon-bounce"></i>
+                        </div>
+                    </div>
+                    <div class="ml-5 w-0 flex-1">
+                        <dl>
+                            <dt class="text-sm font-medium text-gray-400 truncate">
+                                Prédictions effectuées
+                            </dt>
+                            <dd class="flex items-baseline">
+                                <div class="text-2xl font-bold text-white">
+                                    {{ stats.total_predictions }}
+                                </div>
+                            </dd>
+                        </dl>
+                    </div>
+                </div>
+            </div>
+            <div class="bg-gray-800 px-5 py-3 rounded-b-lg">
+                <div class="text-sm">
+                    <a href="{{ url_for('dashboard.predict_page') }}" class="font-medium text-green-400 hover:text-green-300 hover:underline smooth-transition">
+                        Faire une prédiction <i class="fas fa-arrow-right ml-1 icon-bounce"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Success Rate -->
+        <div class="card-aiobi card-hover fade-in delay-400">
+            <div class="p-5">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0">
+                        <div class="rounded-xl bg-yellow-500 p-3 smooth-transition hover-scale">
+                            <i class="fas fa-check-circle text-white text-xl icon-bounce"></i>
+                        </div>
+                    </div>
+                    <div class="ml-5 w-0 flex-1">
+                        <dl>
+                            <dt class="text-sm font-medium text-gray-400 truncate">
+                                Taux de succès
+                            </dt>
+                            <dd class="flex items-baseline">
+                                <div class="text-2xl font-bold text-white">
+                                    {{ stats.success_rate }}%
+                                </div>
+                            </dd>
+                        </dl>
+                    </div>
+                </div>
+            </div>
+            <div class="bg-gray-800 px-5 py-3 rounded-b-lg">
+                <div class="text-sm">
+                    <a href="{{ url_for('dashboard.history_page') }}" class="font-medium text-yellow-400 hover:text-yellow-300 hover:underline smooth-transition">
+                        Voir l'historique <i class="fas fa-arrow-right ml-1 icon-bounce"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+        
+        <!-- License Days -->
+        <div class="card-aiobi card-hover fade-in delay-500">
+            <div class="p-5">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0">
+                        <div class="rounded-xl bg-purple-500 p-3 smooth-transition hover-scale">
+                            <i class="fas fa-crown text-white text-xl icon-spin"></i>
+                        </div>
+                    </div>
+                    <div class="ml-5 w-0 flex-1">
+                        <dl>
+                            <dt class="text-sm font-medium text-gray-400 truncate">
+                                Jours restants
+                            </dt>
+                            <dd class="flex items-baseline">
+                                <div class="text-2xl font-bold text-white">
+                                    {{ stats.license_days_left }}
+                                </div>
+                            </dd>
+                        </dl>
+                    </div>
+                </div>
+            </div>
+            <div class="bg-gray-800 px-5 py-3 rounded-b-lg">
+                <div class="text-sm">
+                    <span class="badge-aiobi badge-aiobi-outline text-gray-300">
+                        {{ stats.license_type|upper }}
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Recent Trainings -->
+    <div class="card-aiobi">
+        <div class="px-4 py-5 sm:px-6 border-b border-gray-700">
+            <h3 class="text-lg leading-6 font-medium text-white">
+                <i class="fas fa-history mr-2"></i>Entraînements récents
+            </h3>
+            <p class="mt-1 text-sm text-gray-500">
+                Les 10 derniers entraînements de modèles
+            </p>
+        </div>
+        <div class="px-4 py-5 sm:p-6">
+            {% if recent_trainings %}
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-700">
+                    <thead class="bg-gray-800">
+                        <tr>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
+                                Nom du modèle
+                            </th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
+                                Type
+                            </th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
+                                Status
+                            </th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
+                                Métrique
+                            </th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
+                                Date
+                            </th>
+                            <th scope="col" class="relative px-6 py-3">
+                                <span class="sr-only">Actions</span>
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-700">
+                        {% for training in recent_trainings %}
+                        <tr class="hover:bg-gray-800">
+                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-white">
+                                <i class="fas fa-cube mr-2 text-gray-400"></i>
+                                {{ training.model_name }}
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-400">
+                                <span class="badge-aiobi badge-aiobi-outline">
+                                    {{ training.model_type }}
+                                </span>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                {% if training.status == 'completed' %}
+                                <span class="badge-aiobi badge-aiobi-success">
+                                    <i class="fas fa-check-circle mr-1"></i> Terminé
+                                </span>
+                                {% elif training.status == 'training' %}
+                                <span class="badge-aiobi badge-aiobi-warning">
+                                    <i class="fas fa-spinner fa-spin mr-1"></i> En cours
+                                </span>
+                                {% elif training.status == 'failed' %}
+                                <span class="badge-aiobi badge-aiobi-error">
+                                    <i class="fas fa-times-circle mr-1"></i> Échoué
+                                </span>
+                                {% endif %}
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-400">
+                                {% if training.metrics and training.status == 'completed' %}
+                                    <span class="font-bold text-white">{{ (training.metrics.get('roc_auc', 0) * 100)|round(2) }}%</span>
+                                {% else %}
+                                    -
+                                {% endif %}
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-400">
+                                {{ training.created_at.strftime('%d/%m/%Y %H:%M') }}
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                {% if training.status == 'completed' %}
+                                <a href="{{ url_for('dashboard.model_detail', model_id=training.id) }}" 
+                                   class="text-black hover:underline inline-flex items-center">
+                                    Voir détails <i class="fas fa-arrow-right ml-1 text-xs"></i>
+                                </a>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="text-center py-12">
+                <i class="fas fa-inbox text-gray-400 text-5xl mb-4"></i>
+                <h3 class="text-lg font-bold text-white mb-2">Aucun entraînement</h3>
+                <p class="text-gray-400 mb-6">Commencez par entraîner votre premier modèle</p>
+                <a href="{{ url_for('dashboard.upload_page') }}" 
+                   class="btn-aiobi-primary">
+                    <i class="fas fa-upload mr-2"></i>
+                    Upload Dataset
+                </a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    
+    <!-- Quick Actions -->
+    <div class="grid grid-cols-1 gap-5 sm:grid-cols-3">
+        <div class="card-aiobi p-6">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h3 class="text-lg font-bold text-white">Entraîner un modèle</h3>
+                    <p class="mt-1 text-sm text-gray-400">Upload un dataset étiqueté</p>
+                </div>
+                <div class="rounded-full bg-black p-3">
+                    <i class="fas fa-upload text-white text-xl"></i>
+                </div>
+            </div>
+            <a href="{{ url_for('dashboard.upload_page') }}" 
+               class="mt-4 block w-full text-center px-4 py-2 border-2 border-white text-white rounded-lg hover:bg-white hover:text-black transition-all duration-200 font-medium">
+                Commencer
+            </a>
+        </div>
+        
+        <div class="card-aiobi p-6">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h3 class="text-lg font-bold text-white">Faire des prédictions</h3>
+                    <p class="mt-1 text-sm text-gray-400">Utiliser un modèle existant</p>
+                </div>
+                <div class="rounded-full bg-green-600 p-3">
+                    <i class="fas fa-chart-line text-white text-xl"></i>
+                </div>
+            </div>
+            <a href="{{ url_for('dashboard.predict_page') }}" 
+               class="mt-4 block w-full text-center px-4 py-2 border-2 border-green-600 text-green-600 rounded-lg hover:bg-green-600 hover:text-white transition-all duration-200 font-medium">
+                Prédire
+            </a>
+        </div>
+        
+        <div class="card-aiobi p-6">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h3 class="text-lg font-bold text-white">Voir mes modèles</h3>
+                    <p class="mt-1 text-sm text-gray-400">Gérer mes modèles entraînés</p>
+                </div>
+                <div class="rounded-full bg-purple-600 p-3">
+                    <i class="fas fa-database text-white text-xl"></i>
+                </div>
+            </div>
+            <a href="{{ url_for('dashboard.models_page') }}" 
+               class="mt-4 block w-full text-center px-4 py-2 border-2 border-purple-600 text-purple-600 rounded-lg hover:bg-purple-600 hover:text-white transition-all duration-200 font-medium">
+                Explorer
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

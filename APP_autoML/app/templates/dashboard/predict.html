@@ -1,0 +1,354 @@
+{% extends "base.html" %}
+
+{% block title %}Faire des Prédictions - Aïobi{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto">
+    <h1 class="text-3xl font-bold text-white mb-8 fade-in">
+        <i class="fas fa-chart-line mr-3 icon-bounce"></i>Faire des prédictions
+    </h1>
+    
+    {% if models %}
+    <!-- Step 1: Select Model -->
+    <div class="card-aiobi card-hover p-6 mb-6 fade-in delay-100">
+        <h2 class="text-lg font-bold text-white mb-4">
+            1. Sélectionnez un modèle
+        </h2>
+        
+        <div class="grid grid-cols-1 gap-4">
+            {% for model in models %}
+            <label class="relative flex items-center p-4 border-2 border-gray-600 rounded-lg cursor-pointer smooth-transition hover:border-white hover-scale model-card">
+                <input type="radio" 
+                       name="selected_model" 
+                       value="{{ model.id }}" 
+                       class="sr-only model-radio"
+                       data-model-name="{{ model.model_name }}"
+                       data-model-path="{{ model.model_path }}">
+                <div class="flex-1">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center">
+                            <div class="bg-white rounded-lg p-3 mr-4 smooth-transition hover-scale">
+                                <i class="fas fa-brain text-black text-xl icon-bounce"></i>
+                            </div>
+                            <div>
+                                <h3 class="text-lg font-bold text-white">{{ model.model_name }}</h3>
+                                <p class="text-sm text-gray-400">
+                                    Créé le {{ model.created_at.strftime('%d/%m/%Y') }} • 
+                                    {{ model.prediction_count }} prédictions
+                                </p>
+                            </div>
+                        </div>
+                        {% if model.metrics %}
+                        <div class="text-right">
+                            <p class="text-sm text-gray-400">ROC AUC</p>
+                            <p class="text-lg font-bold text-white">
+                                {{ (model.metrics.get('roc_auc', 0) * 100)|round(1) }}%
+                            </p>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="ml-4 hidden check-icon smooth-transition">
+                    <i class="fas fa-check-circle text-white text-2xl"></i>
+                </div>
+            </label>
+            {% endfor %}
+        </div>
+    </div>
+    
+    <!-- Step 2: Upload Unlabeled Data -->
+    <div id="upload-section" class="card-aiobi card-hover p-6 mb-6 opacity-50 pointer-events-none smooth-transition fade-in delay-200">
+        <h2 class="text-lg font-bold text-white mb-4">
+            2. Upload les données à prédire (sans labels)
+        </h2>
+        
+        <div id="predict-drop-zone" 
+             class="border-2 border-dashed border-gray-300 rounded-lg p-12 text-center hover:border-white smooth-transition cursor-pointer shine-effect">
+            <i class="fas fa-file-upload text-5xl text-gray-400 mb-4 icon-bounce"></i>
+            <p class="text-lg font-bold text-white mb-2">Glissez-déposez votre fichier ici</p>
+            <p class="text-sm text-gray-400 mb-4">ou cliquez pour sélectionner</p>
+            <p class="text-xs text-gray-400">Formats: CSV, XLSX, Parquet</p>
+            <input type="file" 
+                   id="predict-file-input" 
+                   accept=".csv,.xlsx,.parquet" 
+                   class="hidden">
+        </div>
+        
+        <!-- File Info -->
+        <div id="predict-file-info" class="hidden mt-4 p-4 bg-gray-800 border-2 border-gray-700 rounded-lg smooth-transition fade-in">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center">
+                    <i class="fas fa-file-alt text-white text-2xl mr-3"></i>
+                    <div>
+                        <p class="font-bold text-white" id="predict-file-name"></p>
+                        <p class="text-sm text-gray-400" id="predict-file-info-text"></p>
+                    </div>
+                </div>
+                <button id="remove-predict-file" class="text-red-500 hover:text-red-400 smooth-transition hover-scale">
+                    <i class="fas fa-times-circle text-xl icon-shake"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Step 3: Predict -->
+    <div id="predict-section" class="card-aiobi card-hover p-6 mb-6 opacity-50 pointer-events-none smooth-transition fade-in delay-300">
+        <h2 class="text-lg font-bold text-white mb-4">
+            3. Lancer les prédictions
+        </h2>
+        
+        <div class="bg-gray-800 border-2 border-gray-700 rounded-lg p-4 mb-4">
+            <div class="flex items-start">
+                <i class="fas fa-info-circle text-white mt-1 mr-3"></i>
+                <div class="text-sm text-white">
+                    <p class="font-bold mb-1">Mode Complet Activé</p>
+                    <p>Les prédictions utilisent automatiquement:</p>
+                    <ul class="list-disc list-inside mt-2 space-y-1">
+                        <li>Ensemble des top-3 meilleurs modèles</li>
+                        <li>Détection d'anomalies (Isolation Forest)</li>
+                        <li>Calibration des probabilités</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        
+        <button id="predict-btn" 
+                class="btn-aiobi-primary w-full py-3">
+            <i class="fas fa-magic mr-2"></i>
+            Lancer les prédictions
+        </button>
+    </div>
+    
+    <!-- Prediction Progress -->
+    <div id="progress-section" class="hidden card-aiobi p-6 mb-6">
+        <div class="text-center py-8">
+            <i class="fas fa-cog fa-spin text-white text-5xl mb-4"></i>
+            <p class="text-lg font-bold text-white mb-2">Prédictions en cours...</p>
+            <p class="text-sm text-gray-400">Cela peut prendre quelques instants</p>
+        </div>
+    </div>
+    
+    <!-- Results -->
+    <div id="results-section" class="hidden card-aiobi p-6">
+        <div class="text-center py-8">
+            <div class="mx-auto h-16 w-16 flex items-center justify-center rounded-full bg-green-900 bg-opacity-30 mb-4">
+                <i class="fas fa-check text-green-500 text-3xl"></i>
+            </div>
+            <h2 class="text-2xl font-bold text-white mb-2">Prédictions terminées !</h2>
+            <p class="text-gray-400 mb-6">Les résultats sont prêts à être téléchargés</p>
+            
+            <!-- Summary -->
+            <div id="prediction-summary" class="grid grid-cols-3 gap-4 max-w-2xl mx-auto mb-6">
+                <!-- Will be filled dynamically -->
+            </div>
+            
+            <div class="flex justify-center space-x-4">
+                <a id="download-btn" 
+                   href="#"
+                   class="btn-aiobi-primary text-base px-6 py-3">
+                    <i class="fas fa-download mr-2"></i>
+                    Télécharger les résultats (CSV)
+                </a>
+                <button onclick="window.location.reload()" 
+                        class="btn-aiobi-secondary text-base px-6 py-3">
+                    <i class="fas fa-redo mr-2"></i>
+                    Nouvelle prédiction
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    {% else %}
+    <!-- No Models State -->
+    <div class="card-aiobi p-12 text-center">
+        <i class="fas fa-exclamation-triangle text-yellow-400 text-6xl mb-4"></i>
+        <h3 class="text-xl font-bold text-white mb-2">Aucun modèle disponible</h3>
+        <p class="text-gray-500 mb-6">Vous devez d'abord entraîner un modèle avant de pouvoir faire des prédictions</p>
+        
+        <a href="{{ url_for('dashboard.upload_page') }}" 
+           class="btn-aiobi-primary text-base px-6 py-3">
+            <i class="fas fa-plus mr-2"></i>
+            Entraîner un modèle
+        </a>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let selectedModelId = null;
+let selectedModelPath = null;
+let uploadedFilePath = null;
+
+// Model selection
+document.querySelectorAll('.model-radio').forEach(radio => {
+    radio.addEventListener('change', function() {
+        // Update UI
+        document.querySelectorAll('.model-card').forEach(card => {
+            card.classList.remove('border-white', 'bg-gray-800');
+            card.querySelector('.check-icon').classList.add('hidden');
+        });
+        
+        const card = this.closest('.model-card');
+        card.classList.add('border-white', 'bg-gray-800');
+        card.querySelector('.check-icon').classList.remove('hidden');
+        
+        // Enable upload section
+        selectedModelId = this.value;
+        selectedModelPath = this.dataset.modelPath;
+        
+        const uploadSection = document.getElementById('upload-section');
+        uploadSection.classList.remove('opacity-50', 'pointer-events-none');
+    });
+});
+
+// File upload handlers
+const dropZone = document.getElementById('predict-drop-zone');
+const fileInput = document.getElementById('predict-file-input');
+
+dropZone.addEventListener('click', () => fileInput.click());
+
+dropZone.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    dropZone.classList.add('border-white', 'bg-gray-800');
+});
+
+dropZone.addEventListener('dragleave', () => {
+    dropZone.classList.remove('border-white', 'bg-gray-800');
+});
+
+dropZone.addEventListener('drop', (e) => {
+    e.preventDefault();
+    dropZone.classList.remove('border-white', 'bg-gray-800');
+    if (e.dataTransfer.files.length > 0) {
+        handleFile(e.dataTransfer.files[0]);
+    }
+});
+
+fileInput.addEventListener('change', (e) => {
+    if (e.target.files.length > 0) {
+        handleFile(e.target.files[0]);
+    }
+});
+
+document.getElementById('remove-predict-file').addEventListener('click', () => {
+    fileInput.value = '';
+    uploadedFilePath = null;
+    document.getElementById('predict-file-info').classList.add('hidden');
+    document.getElementById('predict-section').classList.add('opacity-50', 'pointer-events-none');
+});
+
+async function handleFile(file) {
+    const formData = new FormData();
+    formData.append('file', file);
+    
+    try {
+        const response = await fetch('/api/upload', {
+            method: 'POST',
+            body: formData
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            uploadedFilePath = data.filepath;
+            
+            // Display file info
+            document.getElementById('predict-file-name').textContent = data.filename;
+            document.getElementById('predict-file-info-text').textContent = 
+                `${data.rows.toLocaleString()} lignes • ${data.columns} colonnes`;
+            document.getElementById('predict-file-info').classList.remove('hidden');
+            
+            // Enable predict section
+            document.getElementById('predict-section').classList.remove('opacity-50', 'pointer-events-none');
+        } else {
+            alert('Erreur: ' + data.error);
+        }
+    } catch (error) {
+        alert('Erreur lors de l\'upload: ' + error.message);
+    }
+}
+
+// Predict button
+document.getElementById('predict-btn').addEventListener('click', async () => {
+    if (!selectedModelId || !uploadedFilePath) {
+        alert('Veuillez sélectionner un modèle et uploader un fichier');
+        return;
+    }
+    
+    // Hide sections
+    document.getElementById('predict-section').classList.add('hidden');
+    document.getElementById('progress-section').classList.remove('hidden');
+    
+    // Afficher le spinner avec message personnalisé
+    window.AiobiAnimations.showLoadingSpinner('🔮 Prédictions en cours...');
+    
+    try {
+        const response = await fetch('/api/predict', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                model_id: selectedModelId,
+                filepath: uploadedFilePath
+            })
+        });
+        
+        const data = await response.json();
+        
+        window.AiobiAnimations.hideLoadingSpinner();
+        
+        if (data.success) {
+            // Animation de succès avec confetti
+            window.AiobiAnimations.celebrateSuccess();
+            window.AiobiAnimations.showToast('✨ Prédictions terminées avec succès !', 'success');
+            displayResults(data);
+        } else {
+            window.AiobiAnimations.showToast('❌ Erreur: ' + data.error, 'error');
+            document.getElementById('progress-section').classList.add('hidden');
+            document.getElementById('predict-section').classList.remove('hidden');
+        }
+    } catch (error) {
+        window.AiobiAnimations.hideLoadingSpinner();
+        window.AiobiAnimations.showToast('❌ Erreur: ' + error.message, 'error');
+        document.getElementById('progress-section').classList.add('hidden');
+        document.getElementById('predict-section').classList.remove('hidden');
+    }
+});
+
+function displayResults(data) {
+    document.getElementById('progress-section').classList.add('hidden');
+    
+    const resultsSection = document.getElementById('results-section');
+    resultsSection.classList.remove('hidden');
+    resultsSection.classList.add('fade-in');
+    
+    // Display summary if available
+    if (data.predictions_summary) {
+        const summary = data.predictions_summary;
+        const summaryDiv = document.getElementById('prediction-summary');
+        
+        summaryDiv.innerHTML = `
+            <div class="p-4 bg-blue-900 bg-opacity-20 rounded-lg smooth-transition hover-glow card-hover">
+                <p class="text-sm text-gray-400">Total</p>
+                <p class="text-2xl font-bold text-blue-500">${summary.total_transactions || 0}</p>
+            </div>
+            <div class="p-4 bg-red-900 bg-opacity-20 rounded-lg smooth-transition hover-glow card-hover">
+                <p class="text-sm text-gray-400">Fraudes détectées</p>
+                <p class="text-2xl font-bold text-red-500">${summary.fraud_detected || 0}</p>
+            </div>
+            <div class="p-4 bg-green-900 bg-opacity-20 rounded-lg smooth-transition hover-glow card-hover">
+                <p class="text-sm text-gray-400">Légitimes</p>
+                <p class="text-2xl font-bold text-green-500">${summary.normal_transactions || 0}</p>
+            </div>
+        `;
+    }
+    
+    // Set download link - use filename from path
+    const filename = data.output_path.split(/[\\/]/).pop();
+    document.getElementById('download-btn').href = `/download/${filename}`;
+}
+</script>
+{% endblock %}

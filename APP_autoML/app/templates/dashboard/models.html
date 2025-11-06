@@ -1,0 +1,212 @@
+{% extends "base.html" %}
+
+{% block title %}Mes Modèles - Aïobi{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <!-- Header -->
+    <div class="flex justify-between items-center fade-in">
+        <div>
+            <h1 class="text-3xl font-bold text-white">
+                <i class="fas fa-brain mr-3 icon-bounce"></i>Mes Modèles
+            </h1>
+            <p class="mt-1 text-sm text-gray-400">
+                {{ models|length }} modèle(s) entraîné(s)
+            </p>
+        </div>
+        <a href="{{ url_for('dashboard.upload_page') }}" 
+           class="btn-aiobi-primary btn-gradient-animated shine-effect">
+            <i class="fas fa-plus mr-2"></i>
+            Nouveau modèle
+        </a>
+    </div>
+    
+    {% if models %}
+    <!-- Models Grid -->
+    <div class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+        {% for model in models %}
+        <div class="card-aiobi card-3d overflow-hidden fade-in delay-{{ loop.index }}00">
+            <!-- Model Header -->
+            <div class="bg-black p-4 shine-effect">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center">
+                        <div class="bg-white bg-opacity-20 rounded-lg p-2 smooth-transition hover-scale">
+                            <i class="fas fa-cube text-white text-xl icon-spin"></i>
+                        </div>
+                        <div class="ml-3">
+                            <h3 class="text-lg font-bold text-white truncate">
+                                {{ model.model_name }}
+                            </h3>
+                            <p class="text-xs text-white text-opacity-80">
+                                {% if model.meta_transformer_used %}Meta-Transformer{% else %}XGBoost{% endif %}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Model Info -->
+            <div class="p-4">
+                <div class="space-y-3">
+                    <!-- Target Column -->
+                    <div class="flex items-center text-sm smooth-transition hover:translate-x-1">
+                        <i class="fas fa-crosshairs text-gray-400 w-5"></i>
+                        <span class="text-gray-400 ml-2">Cible:</span>
+                        <span class="font-bold text-white ml-auto">{{ model.target_column }}</span>
+                    </div>
+                    
+                    <!-- Creation Date -->
+                    <div class="flex items-center text-sm smooth-transition hover:translate-x-1">
+                        <i class="fas fa-calendar text-gray-400 w-5"></i>
+                        <span class="text-gray-400 ml-2">Créé le:</span>
+                        <span class="text-white ml-auto">{{ model.created_at.strftime('%d/%m/%Y') }}</span>
+                    </div>
+                    
+                    <!-- Predictions Count -->
+                    <div class="flex items-center text-sm smooth-transition hover:translate-x-1">
+                        <i class="fas fa-chart-line text-gray-400 w-5"></i>
+                        <span class="text-gray-400 ml-2">Prédictions:</span>
+                        <span class="font-bold text-white ml-auto">{{ model.prediction_count }}</span>
+                    </div>
+                    
+                    <!-- Metrics -->
+                    {% if model.accuracy %}
+                    <div class="pt-3 border-t border-gray-700">
+                        <p class="text-xs text-gray-400 mb-2">Performance</p>
+                        <div class="text-center p-3 bg-yellow-900 bg-opacity-20 rounded-lg border-2 border-yellow-700 hover-glow smooth-transition">
+                            <p class="text-lg text-yellow-500 font-bold">
+                                {{ ((model.accuracy or 0) * 100)|round(2) }}%
+                            </p>
+                            <p class="text-xs text-gray-400">Accuracy</p>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <!-- Actions -->
+            <div class="bg-gray-800 px-4 py-3 flex justify-between items-center border-t border-gray-700">
+                <a href="{{ url_for('dashboard.model_detail', model_id=model.id) }}" 
+                   class="text-sm text-white hover:underline font-medium inline-flex items-center smooth-transition hover-scale">
+                    <i class="fas fa-eye mr-1 icon-bounce"></i>Détails
+                </a>
+                
+                <div class="flex space-x-3">
+                    <a href="{{ url_for('dashboard.download_model', model_id=model.id) }}" 
+                       class="text-sm text-gray-400 hover:text-white transition-colors smooth-transition hover-scale"
+                       title="Télécharger">
+                        <i class="fas fa-download icon-bounce"></i>
+                    </a>
+                    <button onclick="deleteModel({{ model.id }})" 
+                            class="text-sm text-red-500 hover:text-red-400 transition-colors"
+                            title="Supprimer">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    
+    {% else %}
+    <!-- Empty State -->
+    <div class="card-aiobi p-12 text-center">
+        <i class="fas fa-box-open text-gray-400 text-6xl mb-4"></i>
+        <h3 class="text-xl font-bold text-white mb-2">Aucun modèle entraîné</h3>
+        <p class="text-gray-400 mb-6">Commencez par entraîner votre premier modèle de détection de fraude</p>
+        
+        <a href="{{ url_for('dashboard.upload_page') }}" 
+           class="btn-aiobi-primary text-base px-6 py-3">
+            <i class="fas fa-plus mr-2"></i>
+            Créer mon premier modèle
+        </a>
+        
+        <!-- Quick Guide -->
+        <div class="mt-12 max-w-2xl mx-auto">
+            <h4 class="text-lg font-bold text-white mb-4">Comment ça marche ?</h4>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 text-left">
+                <div class="flex">
+                    <div class="flex-shrink-0">
+                        <div class="flex items-center justify-center h-12 w-12 rounded-lg bg-black text-white text-xl font-bold">
+                            1
+                        </div>
+                    </div>
+                    <div class="ml-4">
+                        <h5 class="text-sm font-bold text-white">Upload Dataset</h5>
+                        <p class="text-sm text-gray-400">Uploadez un fichier CSV avec vos données étiquetées</p>
+                    </div>
+                </div>
+                
+                <div class="flex">
+                    <div class="flex-shrink-0">
+                        <div class="flex items-center justify-center h-12 w-12 rounded-lg bg-black text-white text-xl font-bold">
+                            2
+                        </div>
+                    </div>
+                    <div class="ml-4">
+                        <h5 class="text-sm font-bold text-white">AutoML</h5>
+                        <p class="text-sm text-gray-400">Le système détecte automatiquement la target et optimise le modèle</p>
+                    </div>
+                </div>
+                
+                <div class="flex">
+                    <div class="flex-shrink-0">
+                        <div class="flex items-center justify-center h-12 w-12 rounded-lg bg-black text-white text-xl font-bold">
+                            3
+                        </div>
+                    </div>
+                    <div class="ml-4">
+                        <h5 class="text-sm font-bold text-white">Prédictions</h5>
+                        <p class="text-sm text-gray-400">Utilisez le modèle pour détecter les fraudes</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+async function deleteModel(modelId) {
+    if (!confirm('Êtes-vous sûr de vouloir supprimer ce modèle ? Cette action est irréversible.')) {
+        return;
+    }
+    
+    // Afficher le spinner de chargement
+    window.AiobiAnimations.showLoadingSpinner('Suppression en cours...');
+    
+    try {
+        const response = await fetch(`/delete/${modelId}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        });
+        
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        
+        window.AiobiAnimations.hideLoadingSpinner();
+        
+        if (data.success) {
+            // Notification de succès avec confetti
+            window.AiobiAnimations.showToast('✨ Modèle supprimé avec succès !', 'success');
+            window.AiobiAnimations.celebrateSuccess();
+            
+            // Reload après animation
+            setTimeout(() => window.location.reload(), 1500);
+        } else {
+            window.AiobiAnimations.showToast('❌ ' + data.message, 'error');
+        }
+    } catch (error) {
+        window.AiobiAnimations.hideLoadingSpinner();
+        window.AiobiAnimations.showToast('❌ Erreur: ' + error.message, 'error');
+    }
+}
+</script>
+{% endblock %}

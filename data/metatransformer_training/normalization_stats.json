@@ -1,0 +1,194 @@
+{
+  "dataset_rows": {
+    "min": 10000.0,
+    "max": 70000.0,
+    "range": 60000.0
+  },
+  "dataset_columns": {
+    "min": 15.0,
+    "max": 29.0,
+    "range": 14.0
+  },
+  "fraud_rate": {
+    "min": 0.011685714285714285,
+    "max": 0.11833333333333333,
+    "range": 0.10664761904761905
+  },
+  "imbalance_ratio": {
+    "min": 18.999999999999996,
+    "max": 18.999999999999996,
+    "range": 0.0,
+    "constant": true
+  },
+  "actual_numeric_count": {
+    "min": 2.0,
+    "max": 17.0,
+    "range": 15.0
+  },
+  "actual_categorical_count": {
+    "min": 7.0,
+    "max": 26.0,
+    "range": 19.0
+  },
+  "actual_missing_rate": {
+    "min": 0.0,
+    "max": 0.049579502939211165,
+    "range": 0.049579502939211165
+  },
+  "numeric_mean_std": {
+    "min": 37747.15887422936,
+    "max": 418918228474.69617,
+    "range": 418918190727.5373
+  },
+  "numeric_mean_skewness": {
+    "min": 0.9736732505417096,
+    "max": 10.192883379558094,
+    "range": 9.219210129016384
+  },
+  "numeric_correlation_strength": {
+    "min": 0.106261832716101,
+    "max": 0.5185646774473786,
+    "range": 0.41230284473127754
+  },
+  "numeric_mean_kurtosis": {
+    "min": 1.9184646439189752,
+    "max": 481.7326913281807,
+    "range": 479.8142266842617
+  },
+  "numeric_variance_max": {
+    "min": 320101640625.92035,
+    "max": 1.2679319171494397e+25,
+    "range": 1.2679319171494077e+25
+  },
+  "numeric_variance_mean": {
+    "min": 21340119002.082417,
+    "max": 1.4916845797839578e+24,
+    "range": 1.4916845797839366e+24
+  },
+  "total_features_engineered": {
+    "min": 0.0,
+    "max": 50.0,
+    "range": 50.0
+  },
+  "top_feature_importance": {
+    "min": 0.0,
+    "max": 0.5917982459068298,
+    "range": 0.5917982459068298
+  },
+  "avg_feature_importance": {
+    "min": 0.0,
+    "max": 0.034319994927500375,
+    "range": 0.034319994927500375
+  },
+  "feature_importance_entropy": {
+    "min": 0.0,
+    "max": 2.9811296779834997,
+    "range": 2.9811296779834997
+  },
+  "top5_feature_concentration": {
+    "min": 0.0,
+    "max": 0.9603134325112678,
+    "range": 0.9603134325112678
+  },
+  "top10_feature_concentration": {
+    "min": 0.0,
+    "max": 1.0,
+    "range": 1.0
+  },
+  "feature_importance_std": {
+    "min": 0.0,
+    "max": 0.11567356125986639,
+    "range": 0.11567356125986639
+  },
+  "num_dominant_features": {
+    "min": 0.0,
+    "max": 5.0,
+    "range": 5.0
+  },
+  "max_depth": {
+    "min": 3.0,
+    "max": 10.0,
+    "range": 7.0
+  },
+  "learning_rate": {
+    "min": 0.05,
+    "max": 0.19,
+    "range": 0.14
+  },
+  "n_estimators": {
+    "min": 350.0,
+    "max": 450.0,
+    "range": 100.0
+  },
+  "subsample": {
+    "min": 0.65,
+    "max": 1.0,
+    "range": 0.35
+  },
+  "colsample_bytree": {
+    "min": 0.7,
+    "max": 0.9,
+    "range": 0.20000000000000007
+  },
+  "gamma": {
+    "min": 0.0,
+    "max": 0.7,
+    "range": 0.7
+  },
+  "min_child_weight": {
+    "min": 1.0,
+    "max": 15.0,
+    "range": 14.0
+  },
+  "reg_alpha": {
+    "min": 0.0,
+    "max": 0.2,
+    "range": 0.2
+  },
+  "reg_lambda": {
+    "min": 0.3,
+    "max": 2.0,
+    "range": 1.7
+  },
+  "scale_pos_weight": {
+    "min": 6.9288369876,
+    "max": 135.9360927152,
+    "range": 129.0072557276
+  },
+  "overfitting_score": {
+    "min": 0.0,
+    "max": 0.39743126949999996,
+    "range": 0.39743126949999996
+  },
+  "score_stability": {
+    "min": 1.0,
+    "max": 1.0,
+    "range": 0.0,
+    "constant": true
+  },
+  "complexity_score": {
+    "min": 0.0,
+    "max": 2.0,
+    "range": 2.0
+  },
+  "structure_target_distribution": {
+    "min": 0.011685714285714285,
+    "max": 0.11833333333333333,
+    "range": 0.10664761904761905
+  },
+  "dataset_quality_score": {
+    "min": 0.4984443530610684,
+    "max": 0.9523955140325533,
+    "range": 0.4539511609714849
+  },
+  "hyperparameter_diversity": {
+    "min": 1.0666666666666667,
+    "max": 2.077777777777778,
+    "range": 1.0111111111111113
+  },
+  "model_complexity": {
+    "min": 0.4000000000000001,
+    "max": 0.7233333333333333,
+    "range": 0.3233333333333332
+  }
+}
