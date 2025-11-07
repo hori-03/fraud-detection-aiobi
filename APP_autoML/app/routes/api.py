@@ -19,6 +19,14 @@ import traceback
 
 api_bp = Blueprint('api', __name__, url_prefix='/api')
 
+# Helper function to get S3 bucket name
+def get_s3_bucket() -> str:
+    """
+    Récupère le nom du bucket S3 depuis les variables d'environnement.
+    Supporte à la fois AWS_S3_BUCKET et S3_MODEL_BUCKET pour compatibilité.
+    """
+    return os.environ.get('S3_MODEL_BUCKET') or os.environ.get('AWS_S3_BUCKET', 'fraud-detection-ml-models')
+
 # Helper function for S3 uploads
 def upload_file_to_s3(local_path: Path, s3_bucket: str, s3_key: str) -> bool:
     """
@@ -247,7 +255,7 @@ def train_model():
             
             # 🚀 Upload vers S3 ET supprimer local (mode cloud-only)
             s3_uploaded = False
-            s3_bucket = os.environ.get('AWS_S3_BUCKET', 'fraud-detection-ml-models')
+            s3_bucket = get_s3_bucket()
             
             # Utiliser le nom du modèle généré (avec timestamp) pour éviter les collisions
             model_folder_name = Path(model_local_path).name if model_local_path else model_name
@@ -827,7 +835,7 @@ def _predict_with_ensemble(model, filepath, temp_dataset_file, current_user, cur
         s3_key = None
         download_url = None
         try:
-            s3_bucket = os.environ.get('AWS_S3_BUCKET', 'fraud-detection-ml-models')
+            s3_bucket = get_s3_bucket()
             s3_key = f"user_data/{current_user.id}/predictions/{output_filename}"
             
             s3_client = boto3.client('s3')
@@ -851,8 +859,8 @@ def _predict_with_ensemble(model, filepath, temp_dataset_file, current_user, cur
         return jsonify({
             'success': True,
             'message': f'Prédictions ensemble effectuées avec succès sur {len(results)} transactions',
-            'output_path': str(output_path) if not s3_key else f"s3://{s3_bucket}/{s3_key}",
-            'download_url': download_url,
+            'output_path': f"s3://{s3_bucket}/{s3_key}" if s3_key else str(output_path),
+            'download_url': download_url if download_url else f"/download/{output_filename}",
             'predictions_summary': stats,
             'model_type': 'ensemble'
         }), 200
@@ -1147,9 +1155,9 @@ def apply_unlabeled():
         )
         current_app.logger.info(f"✅ Ensemble model saved: {model_save_info['model_path']}")
         
-        # � ÉTAPE 5: Upload vers S3 (stockage cloud par utilisateur)
+        # ÉTAPE 5: Upload vers S3 (stockage cloud par utilisateur)
         s3_uploaded = False
-        s3_bucket = os.environ.get('AWS_S3_BUCKET', 'fraud-detection-ml-models')
+        s3_bucket = get_s3_bucket()
         s3_prefix = f"user_models/{current_user.id}/ensemble_{model_name}_{timestamp}/"
         
         try:
@@ -1395,7 +1403,7 @@ def download_s3_predictions():
             return jsonify({'error': 'Accès non autorisé'}), 403
         
         # Download from S3 to temp file
-        s3_bucket = os.environ.get('AWS_S3_BUCKET', 'fraud-detection-ml-models')
+        s3_bucket = get_s3_bucket()
         s3_client = boto3.client('s3')
         
         # Extract filename from S3 key
