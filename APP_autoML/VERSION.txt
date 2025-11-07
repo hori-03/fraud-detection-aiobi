@@ -1,0 +1,4 @@
+2.1.0-s3-upload-fix
+Commit: ea3b7f6
+Date: 2025-11-07
+Fix: S3 bucket environment variable (S3_MODEL_BUCKET)
