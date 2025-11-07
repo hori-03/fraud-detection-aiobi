@@ -56,5 +56,5 @@ ENV PORT=8080
 EXPOSE 8080
 
 # Run with gunicorn for production
-# Use shell form to allow variable expansion
-CMD gunicorn --bind 0.0.0.0:${PORT:-8080} --workers 2 --threads 2 --timeout 300 --keep-alive 5 run:app
+# Use exec form with sh -c to properly handle environment variables
+CMD ["sh", "-c", "gunicorn --bind 0.0.0.0:${PORT:-8080} --workers 2 --threads 2 --timeout 300 --keep-alive 5 run:app"]
