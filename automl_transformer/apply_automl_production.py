@@ -68,8 +68,9 @@ class AutoMLProductionApplicator:
     - Calibration des probabilités
     """
     
-    def __init__(self, automl_models_dir: str = "data/automl_models"):
+    def __init__(self, automl_models_dir: str = "data/automl_models", use_reference_models: bool = True):
         self.automl_models_dir = Path(automl_models_dir)
+        self.use_reference_models = use_reference_models
         self.available_models = self._discover_models()
         self.column_matcher = ColumnMatcher(fuzzy_threshold=0.7)
         
@@ -77,17 +78,35 @@ class AutoMLProductionApplicator:
         self._model_cache = {}
         
     def _discover_models(self) -> List[str]:
-        """Découvre tous les modèles AutoML disponibles"""
-        if not self.automl_models_dir.exists():
-            print(f"⚠️  Dossier {self.automl_models_dir} introuvable")
-            return []
-        
+        """Découvre tous les modèles AutoML disponibles (locaux + référence DB)"""
         models = []
-        for dataset_dir in self.automl_models_dir.iterdir():
-            if dataset_dir.is_dir():
-                model_file = dataset_dir / "xgboost_model.joblib"
-                if model_file.exists():
-                    models.append(dataset_dir.name)
+        
+        # 1. Modèles locaux
+        if self.automl_models_dir.exists():
+            for dataset_dir in self.automl_models_dir.iterdir():
+                if dataset_dir.is_dir():
+                    model_file = dataset_dir / "xgboost_model.joblib"
+                    if model_file.exists():
+                        models.append(dataset_dir.name)
+        
+        # 2. Modèles de référence depuis la base de données (production)
+        if self.use_reference_models:
+            try:
+                # Import ici pour éviter circular import
+                from app.models.reference_model import ReferenceModel
+                from app import db
+                
+                # Récupérer tous les modèles de référence actifs
+                reference_models = ReferenceModel.query.filter_by(is_active=True).all()
+                for ref_model in reference_models:
+                    if ref_model.model_name not in models:
+                        models.append(ref_model.model_name)
+                
+                if reference_models:
+                    print(f"✅ {len(reference_models)} modèles de référence chargés depuis DB")
+                        
+            except Exception as e:
+                print(f"⚠️ Impossible de charger les modèles de référence: {e}")
         
         return sorted(models)
     
@@ -745,6 +764,9 @@ class AutoMLProductionApplicator:
         
         similarities = []
         for model_name in self.available_models:
+            model_meta = None
+            
+            # Essayer de charger depuis le fichier local
             model_dir = self.automl_models_dir / model_name
             meta_file = model_dir / "dataset_metadata.json"
             
@@ -770,7 +792,38 @@ class AutoMLProductionApplicator:
                     'domain': model_meta_saved.get('domain', 'unknown'),
                     'fraud_info': model_meta_saved.get('fraud_info', {}),
                 }
-                
+            else:
+                # Charger depuis la DB (modèles de référence)
+                try:
+                    from app.models.reference_model import ReferenceModel
+                    ref_model = ReferenceModel.query.filter_by(model_name=model_name).first()
+                    
+                    if ref_model and ref_model.dataset_metadata:
+                        model_meta_saved = json.loads(ref_model.dataset_metadata) if isinstance(ref_model.dataset_metadata, str) else ref_model.dataset_metadata
+                        
+                        model_meta = {
+                            'n_cols': model_meta_saved.get('n_cols', 0),
+                            'n_rows': model_meta_saved.get('n_rows', 0),
+                            'column_names': set(model_meta_saved.get('column_names', [])),
+                            'n_numerical': model_meta_saved.get('n_numerical', 0),
+                            'n_categorical': model_meta_saved.get('n_categorical', 0),
+                            'has_amount': model_meta_saved.get('has_amount', False),
+                            'has_timestamp': model_meta_saved.get('has_timestamp', False),
+                            'has_merchant': model_meta_saved.get('has_merchant', False),
+                            'has_card': model_meta_saved.get('has_card', False),
+                            'has_currency': model_meta_saved.get('has_currency', False),
+                            'has_country': model_meta_saved.get('has_country', False),
+                            'has_balance': model_meta_saved.get('has_balance', False),
+                            'has_customer': model_meta_saved.get('has_customer', False),
+                            'has_account': model_meta_saved.get('has_account', False),
+                            'domain': model_meta_saved.get('domain', 'unknown'),
+                            'fraud_info': model_meta_saved.get('fraud_info', {}),
+                        }
+                except Exception as e:
+                    if verbose:
+                        print(f"⚠️ Impossible de charger métadonnées pour {model_name}: {e}")
+            
+            if model_meta:
                 similarity = self.calculate_similarity(dataset_meta, model_meta)
                 similarities.append((model_name, similarity))
         
