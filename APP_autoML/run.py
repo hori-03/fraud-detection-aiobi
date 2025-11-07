@@ -25,9 +25,15 @@ if __name__ == '__main__':
     # En développement: debug=True, en production: debug=False
     debug = os.environ.get('FLASK_ENV', 'development') == 'development'
     
-    print(f"🚀 Démarrage de l'application AML AutoML sur le port {port}")
+    print("=" * 80)
+    print("🚀 AIOBI FRAUD DETECTION - STARTING")
+    print("=" * 80)
+    print(f"📦 VERSION: 2.1.1-S3-UPLOAD-FIX (Commit: acb9a1a)")
+    print(f"🌐 Port: {port}")
     print(f"📊 Mode: {'Développement' if debug else 'Production'}")
-    print(f"🤖 AutoML: Utilise automl_transformer/full_automl.py")
+    print(f"🤖 AutoML: automl_transformer/full_automl.py")
+    print(f"☁️  S3 Bucket: {os.environ.get('S3_MODEL_BUCKET', 'NOT SET')}")
+    print("=" * 80)
     print(f"🔗 URL: http://localhost:{port}")
     
     app.run(
