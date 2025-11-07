@@ -2,8 +2,8 @@
 FROM python:3.11-slim
 
 # Build version to force cache invalidation
-ENV BUILD_VERSION=2.1.1-s3-upload-fix
-ENV BUILD_DATE=2025-11-07
+ENV BUILD_VERSION=2.1.2-fix-module-path
+ENV BUILD_DATE=2025-11-07-fix2
 
 # Set working directory
 WORKDIR /app
@@ -32,6 +32,16 @@ COPY utils/ /utils
 
 # Copy data/metatransformer_training (model weights) if exists
 COPY data/metatransformer_training/ /data/metatransformer_training
+
+# Debug: List what was copied
+RUN echo "=== Checking copied directories ===" && \
+    ls -la / && \
+    echo "=== /automl_transformer contents ===" && \
+    ls -la /automl_transformer/ || echo "automl_transformer NOT FOUND" && \
+    echo "=== /utils contents ===" && \
+    ls -la /utils/ || echo "utils NOT FOUND" && \
+    echo "=== /app contents ===" && \
+    ls -la /app/
 
 # Create necessary directories
 RUN mkdir -p uploads logs models/xgboost_models instance
