@@ -30,7 +30,7 @@ COPY automl_transformer/ /automl_transformer
 # Copy utils from parent directory (needed by automl_transformer)
 COPY utils/ /utils
 
-# Copy data/metatransformer_training (model weights)
+# Copy data/metatransformer_training (model weights) if exists
 COPY data/metatransformer_training/ /data/metatransformer_training
 
 # Create necessary directories
