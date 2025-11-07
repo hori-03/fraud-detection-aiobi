@@ -838,19 +838,22 @@ def _predict_with_ensemble(model, filepath, temp_dataset_file, current_user, cur
             s3_bucket = get_s3_bucket()
             s3_key = f"user_data/{current_user.id}/predictions/{output_filename}"
             
+            current_app.logger.info(f"[S3 UPLOAD] Starting upload to s3://{s3_bucket}/{s3_key}")
             s3_client = boto3.client('s3')
             s3_client.upload_file(str(output_path), s3_bucket, s3_key)
             
             download_url = f"/api/download_s3_predictions?key={s3_key}"
-            current_app.logger.info(f"✅ Predictions uploaded to S3: s3://{s3_bucket}/{s3_key}")
+            current_app.logger.info(f"[S3 UPLOAD] ✅ SUCCESS - File uploaded to S3: s3://{s3_bucket}/{s3_key}")
+            current_app.logger.info(f"[S3 UPLOAD] Download URL: {download_url}")
             
             # Clean up local file after upload
             output_path.unlink()
             current_app.logger.info(f"�🗑️  Local predictions file deleted (cloud-only mode)")
             
         except Exception as e:
-            current_app.logger.warning(f"⚠️  S3 upload failed, keeping local file: {e}")
-            download_url = str(output_path)  # Fallback to local path
+            current_app.logger.error(f"[S3 UPLOAD] ❌ FAILED - Error: {e}")
+            current_app.logger.error(f"[S3 UPLOAD] Traceback: {traceback.format_exc()}")
+            download_url = f"/download/{output_filename}"  # Fallback to old route
         
         # 🗑️ Clean up temp dataset
         if temp_dataset_file and temp_dataset_file.exists():
