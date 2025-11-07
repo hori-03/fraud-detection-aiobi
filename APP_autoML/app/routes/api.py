@@ -806,7 +806,7 @@ def _predict_with_ensemble(model, filepath, temp_dataset_file, current_user, cur
         output_path = output_dir / output_filename
         
         output_df.to_csv(output_path, index=False)
-        current_app.logger.info(f"✅ Predictions saved: {output_path}")
+        current_app.logger.info(f"✅ Predictions saved locally: {output_path}")
         
         # Calculer les statistiques avec les seuils optimisés (40% et 50%)
         fraud_detected = int((results['combined_score'] >= 0.40).sum())  # MEDIUM + HIGH
@@ -823,14 +823,36 @@ def _predict_with_ensemble(model, filepath, temp_dataset_file, current_user, cur
             'avg_combined_score': float(results['combined_score'].mean())
         }
         
-        # 🗑️ Clean up
+        # � Upload predictions to S3 for persistent storage
+        s3_key = None
+        download_url = None
+        try:
+            s3_bucket = os.environ.get('AWS_S3_BUCKET', 'fraud-detection-ml-models')
+            s3_key = f"user_data/{current_user.id}/predictions/{output_filename}"
+            
+            s3_client = boto3.client('s3')
+            s3_client.upload_file(str(output_path), s3_bucket, s3_key)
+            
+            download_url = f"/api/download_s3_predictions?key={s3_key}"
+            current_app.logger.info(f"✅ Predictions uploaded to S3: s3://{s3_bucket}/{s3_key}")
+            
+            # Clean up local file after upload
+            output_path.unlink()
+            current_app.logger.info(f"�🗑️  Local predictions file deleted (cloud-only mode)")
+            
+        except Exception as e:
+            current_app.logger.warning(f"⚠️  S3 upload failed, keeping local file: {e}")
+            download_url = str(output_path)  # Fallback to local path
+        
+        # 🗑️ Clean up temp dataset
         if temp_dataset_file and temp_dataset_file.exists():
             temp_dataset_file.unlink()
         
         return jsonify({
             'success': True,
             'message': f'Prédictions ensemble effectuées avec succès sur {len(results)} transactions',
-            'output_path': str(output_path),
+            'output_path': str(output_path) if not s3_key else f"s3://{s3_bucket}/{s3_key}",
+            'download_url': download_url,
             'predictions_summary': stats,
             'model_type': 'ensemble'
         }), 200
