@@ -127,17 +127,15 @@ class AutoMLProductionApplicator:
                 # Récupérer les infos du modèle de référence
                 ref_model = ReferenceModel.query.filter_by(model_name=model_name).first()
                 
-                if not ref_model or not ref_model.s3_path:
-                    raise ValueError(f"Modèle de référence {model_name} introuvable ou sans chemin S3")
+                if not ref_model:
+                    raise ValueError(f"Modèle de référence {model_name} introuvable dans la DB")
                 
-                # Extraire bucket et prefix depuis s3_path (format: s3://bucket/prefix/)
-                s3_path = ref_model.s3_path
-                if s3_path.startswith('s3://'):
-                    s3_path = s3_path[5:]  # Retirer 's3://'
+                # Utiliser s3_bucket et s3_prefix
+                bucket = ref_model.s3_bucket
+                prefix = ref_model.s3_prefix
                 
-                parts = s3_path.split('/', 1)
-                bucket = parts[0]
-                prefix = parts[1] if len(parts) > 1 else ''
+                if not bucket or not prefix:
+                    raise ValueError(f"Modèle {model_name} n'a pas de configuration S3 (bucket={bucket}, prefix={prefix})")
                 
                 # Créer un dossier temporaire
                 temp_dir = Path(tempfile.gettempdir()) / 'fraud_models' / model_name
@@ -850,28 +848,30 @@ class AutoMLProductionApplicator:
                 # Charger depuis la DB (modèles de référence)
                 try:
                     from app.models.reference_model import ReferenceModel
+                    import json
                     ref_model = ReferenceModel.query.filter_by(model_name=model_name).first()
                     
-                    if ref_model and ref_model.dataset_metadata:
-                        model_meta_saved = json.loads(ref_model.dataset_metadata) if isinstance(ref_model.dataset_metadata, str) else ref_model.dataset_metadata
+                    if ref_model:
+                        # Reconstruire dataset_metadata depuis les colonnes de ReferenceModel
+                        column_names_list = json.loads(ref_model.column_names) if ref_model.column_names else []
                         
                         model_meta = {
-                            'n_cols': model_meta_saved.get('n_cols', 0),
-                            'n_rows': model_meta_saved.get('n_rows', 0),
-                            'column_names': set(model_meta_saved.get('column_names', [])),
-                            'n_numerical': model_meta_saved.get('n_numerical', 0),
-                            'n_categorical': model_meta_saved.get('n_categorical', 0),
-                            'has_amount': model_meta_saved.get('has_amount', False),
-                            'has_timestamp': model_meta_saved.get('has_timestamp', False),
-                            'has_merchant': model_meta_saved.get('has_merchant', False),
-                            'has_card': model_meta_saved.get('has_card', False),
-                            'has_currency': model_meta_saved.get('has_currency', False),
-                            'has_country': model_meta_saved.get('has_country', False),
-                            'has_balance': model_meta_saved.get('has_balance', False),
-                            'has_customer': model_meta_saved.get('has_customer', False),
-                            'has_account': model_meta_saved.get('has_account', False),
-                            'domain': model_meta_saved.get('domain', 'unknown'),
-                            'fraud_info': model_meta_saved.get('fraud_info', {}),
+                            'n_cols': ref_model.num_features or 0,
+                            'n_rows': ref_model.dataset_size or 0,
+                            'column_names': set(column_names_list),
+                            'n_numerical': ref_model.n_numerical or 0,
+                            'n_categorical': ref_model.n_categorical or 0,
+                            'has_amount': ref_model.has_amount or False,
+                            'has_timestamp': ref_model.has_timestamp or False,
+                            'has_merchant': ref_model.has_merchant or False,
+                            'has_card': ref_model.has_card or False,
+                            'has_currency': ref_model.has_currency or False,
+                            'has_country': ref_model.has_country or False,
+                            'has_balance': ref_model.has_balance or False,
+                            'has_customer': ref_model.has_customer or False,
+                            'has_account': ref_model.has_account or False,
+                            'domain': json.loads(ref_model.signature).get('domain', 'unknown') if ref_model.signature else 'unknown',
+                            'fraud_info': {'fraud_rate': ref_model.fraud_rate or 0},
                         }
                 except Exception as e:
                     if verbose:
