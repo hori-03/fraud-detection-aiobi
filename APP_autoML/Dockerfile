@@ -1,6 +1,10 @@
 # Use Python 3.11 slim image
 FROM python:3.11-slim
 
+# Build version to force cache invalidation
+ENV BUILD_VERSION=2.1.1-s3-upload-fix
+ENV BUILD_DATE=2025-11-07
+
 # Set working directory
 WORKDIR /app
 
