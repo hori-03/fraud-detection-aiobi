@@ -1379,11 +1379,19 @@ def download_s3_predictions():
         import tempfile
         
         s3_key = request.args.get('key')
+        current_app.logger.info(f"📥 Download request - S3 key received: {s3_key}")
+        current_app.logger.info(f"📥 Current user ID: {current_user.id}")
+        current_app.logger.info(f"📥 Full request URL: {request.url}")
+        current_app.logger.info(f"📥 Request args: {request.args}")
+        
         if not s3_key:
+            current_app.logger.error("❌ S3 key manquante dans la requête")
             return jsonify({'error': 'S3 key manquante'}), 400
         
         # Verify user has access (key must contain their user_id)
-        if f"user_data/{current_user.id}/" not in s3_key:
+        expected_prefix = f"user_data/{current_user.id}/"
+        if expected_prefix not in s3_key:
+            current_app.logger.error(f"❌ Accès refusé - Expected prefix: {expected_prefix}, Got: {s3_key}")
             return jsonify({'error': 'Accès non autorisé'}), 403
         
         # Download from S3 to temp file
@@ -1392,6 +1400,7 @@ def download_s3_predictions():
         
         # Extract filename from S3 key
         filename = s3_key.split('/')[-1]
+        current_app.logger.info(f"📥 Downloading from S3: s3://{s3_bucket}/{s3_key}")
         
         # Create temporary file
         temp_file = tempfile.NamedTemporaryFile(delete=False, suffix='.csv')
