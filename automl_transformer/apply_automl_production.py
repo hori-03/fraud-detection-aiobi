@@ -111,11 +111,65 @@ class AutoMLProductionApplicator:
         return sorted(models)
     
     def load_model_pipeline(self, model_name: str) -> Dict:
-        """Charge le pipeline complet (engineer + selector + model)"""
+        """Charge le pipeline complet (engineer + selector + model) depuis local ou S3"""
         model_dir = self.automl_models_dir / model_name
         
+        # Si le modèle n'existe pas localement, essayer de le télécharger depuis S3
         if not model_dir.exists():
-            raise ValueError(f"Modèle {model_name} introuvable dans {self.automl_models_dir}")
+            print(f"\n📥 Modèle {model_name} non trouvé localement, tentative de téléchargement depuis S3...")
+            
+            try:
+                from app.models.reference_model import ReferenceModel
+                import boto3
+                import tempfile
+                import shutil
+                
+                # Récupérer les infos du modèle de référence
+                ref_model = ReferenceModel.query.filter_by(model_name=model_name).first()
+                
+                if not ref_model or not ref_model.s3_path:
+                    raise ValueError(f"Modèle de référence {model_name} introuvable ou sans chemin S3")
+                
+                # Extraire bucket et prefix depuis s3_path (format: s3://bucket/prefix/)
+                s3_path = ref_model.s3_path
+                if s3_path.startswith('s3://'):
+                    s3_path = s3_path[5:]  # Retirer 's3://'
+                
+                parts = s3_path.split('/', 1)
+                bucket = parts[0]
+                prefix = parts[1] if len(parts) > 1 else ''
+                
+                # Créer un dossier temporaire
+                temp_dir = Path(tempfile.gettempdir()) / 'fraud_models' / model_name
+                temp_dir.mkdir(parents=True, exist_ok=True)
+                
+                # Télécharger les fichiers depuis S3
+                s3_client = boto3.client('s3')
+                
+                required_files = ['xgboost_model.joblib']
+                optional_files = ['feature_engineer.joblib', 'feature_selector.joblib', 'performance.json']
+                
+                files_downloaded = []
+                for filename in required_files + optional_files:
+                    s3_key = f"{prefix}{filename}" if prefix.endswith('/') else f"{prefix}/{filename}"
+                    local_path = temp_dir / filename
+                    
+                    try:
+                        s3_client.download_file(bucket, s3_key, str(local_path))
+                        files_downloaded.append(filename)
+                        print(f"   ✓ Téléchargé: {filename}")
+                    except Exception as e:
+                        if filename in required_files:
+                            raise FileNotFoundError(f"Fichier requis {filename} introuvable sur S3: {e}")
+                        else:
+                            print(f"   ⚠️  Fichier optionnel {filename} non trouvé")
+                
+                # Utiliser le dossier temporaire comme model_dir
+                model_dir = temp_dir
+                print(f"   ✅ Modèle téléchargé depuis S3 dans {temp_dir}")
+                
+            except Exception as e:
+                raise ValueError(f"Impossible de charger le modèle {model_name}: {e}")
         
         print(f"\n📦 Chargement du pipeline AutoML: {model_name}")
         
