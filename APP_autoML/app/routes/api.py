@@ -802,9 +802,81 @@ def _predict_with_ensemble(model, filepath, temp_dataset_file, current_user, cur
             verbose=True
         )
         
-        # Créer le CSV enrichi
-        current_app.logger.info("📊 Creating enriched CSV output...")
-        output_df = _create_simplified_output_unlabeled(df_prod, results)
+        # 🎯 SYSTÈME DE SEUILS DYNAMIQUES ADAPTATIFS
+        # Ajuste automatiquement les seuils pour détecter un taux de fraude réaliste (3-8%)
+        current_app.logger.info("🎯 Applying dynamic threshold optimization...")
+        
+        # Configuration du système adaptatif
+        TARGET_FRAUD_RATE_MIN = 0.03  # 3% minimum
+        TARGET_FRAUD_RATE_MAX = 0.08  # 8% maximum
+        INITIAL_HIGH_THRESHOLD = 0.50
+        INITIAL_MEDIUM_THRESHOLD = 0.40
+        MIN_HIGH_THRESHOLD = 0.15  # Ne pas descendre en dessous (risque faux positifs)
+        MIN_MEDIUM_THRESHOLD = 0.10
+        THRESHOLD_STEP = 0.05  # Réduction progressive
+        MAX_ITERATIONS = 6  # Limite d'itérations
+        
+        # Scores triés pour analyse de distribution
+        scores_sorted = results['combined_score'].sort_values(ascending=False)
+        total_transactions = len(results)
+        
+        current_app.logger.info(f"📊 Score distribution: min={scores_sorted.min():.4f}, "
+                               f"max={scores_sorted.max():.4f}, "
+                               f"mean={scores_sorted.mean():.4f}, "
+                               f"median={scores_sorted.median():.4f}")
+        
+        # Itération pour trouver les seuils optimaux
+        high_threshold = INITIAL_HIGH_THRESHOLD
+        medium_threshold = INITIAL_MEDIUM_THRESHOLD
+        best_thresholds = (high_threshold, medium_threshold)
+        iteration = 0
+        
+        while iteration < MAX_ITERATIONS:
+            iteration += 1
+            
+            # Calculer le taux de détection avec les seuils actuels
+            fraud_count = (results['combined_score'] >= medium_threshold).sum()
+            fraud_rate = fraud_count / total_transactions
+            
+            current_app.logger.info(f"🔄 Iteration {iteration}: thresholds=[{medium_threshold:.2f}, {high_threshold:.2f}], "
+                                   f"fraud_rate={fraud_rate:.2%} ({fraud_count}/{total_transactions})")
+            
+            # ✅ Condition de succès : taux dans la fourchette cible
+            if TARGET_FRAUD_RATE_MIN <= fraud_rate <= TARGET_FRAUD_RATE_MAX:
+                current_app.logger.info(f"✅ Optimal thresholds found: MEDIUM={medium_threshold:.2f}, HIGH={high_threshold:.2f}")
+                best_thresholds = (high_threshold, medium_threshold)
+                break
+            
+            # ❌ Trop peu de fraudes détectées → réduire les seuils
+            if fraud_rate < TARGET_FRAUD_RATE_MIN:
+                # Réduire les seuils progressivement
+                new_medium = max(medium_threshold - THRESHOLD_STEP, MIN_MEDIUM_THRESHOLD)
+                new_high = max(high_threshold - THRESHOLD_STEP, MIN_HIGH_THRESHOLD)
+                
+                # Si on atteint les limites minimales, arrêter
+                if new_medium == MIN_MEDIUM_THRESHOLD and new_high == MIN_HIGH_THRESHOLD:
+                    current_app.logger.warning(f"⚠️  Minimum thresholds reached: MEDIUM={MIN_MEDIUM_THRESHOLD}, HIGH={MIN_HIGH_THRESHOLD}")
+                    best_thresholds = (new_high, new_medium)
+                    break
+                
+                medium_threshold = new_medium
+                high_threshold = new_high
+            
+            # ✅ Trop de fraudes détectées → garder les seuils actuels (on ne les augmente pas)
+            else:
+                current_app.logger.info(f"✅ Fraud rate acceptable ({fraud_rate:.2%}), keeping current thresholds")
+                best_thresholds = (high_threshold, medium_threshold)
+                break
+        
+        # Appliquer les seuils optimaux trouvés
+        final_high_threshold, final_medium_threshold = best_thresholds
+        current_app.logger.info(f"🎯 Final thresholds: MEDIUM={final_medium_threshold:.2f}, HIGH={final_high_threshold:.2f}")
+        
+        # Créer le CSV enrichi avec les seuils optimaux
+        current_app.logger.info("📊 Creating enriched CSV output with optimized thresholds...")
+        output_df = _create_simplified_output_unlabeled(df_prod, results, 
+                                                       high_threshold=final_high_threshold,
+                                                       medium_threshold=final_medium_threshold)
         
         # Sauvegarder dans UPLOAD_FOLDER (même comportement que les modèles classiques)
         timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
@@ -814,19 +886,24 @@ def _predict_with_ensemble(model, filepath, temp_dataset_file, current_user, cur
         output_df.to_csv(output_path, index=False)
         current_app.logger.info(f"✅ Predictions saved: {output_path}")
         
-        # Calculer les statistiques avec les seuils optimisés (40% et 50%)
-        fraud_detected = int((results['combined_score'] >= 0.40).sum())  # MEDIUM + HIGH
+        # Calculer les statistiques avec les seuils optimisés
+        fraud_detected = int((results['combined_score'] >= final_medium_threshold).sum())  # MEDIUM + HIGH
         stats = {
             'total_transactions': len(results),
             'fraud_detected': fraud_detected,
             'fraud_rate': round(fraud_detected / len(results) * 100, 2),
             'normal_transactions': len(results) - fraud_detected,
-            'high_risk': int((results['combined_score'] >= 0.50).sum()),
-            'medium_risk': int(((results['combined_score'] >= 0.40) & (results['combined_score'] < 0.50)).sum()),
-            'low_risk': int((results['combined_score'] < 0.40).sum()),
+            'high_risk': int((results['combined_score'] >= final_high_threshold).sum()),
+            'medium_risk': int(((results['combined_score'] >= final_medium_threshold) & (results['combined_score'] < final_high_threshold)).sum()),
+            'low_risk': int((results['combined_score'] < final_medium_threshold).sum()),
             'anomalies_detected': int(results['is_anomaly'].sum()),
             'avg_fraud_probability': float(results['fraud_probability'].mean()),
-            'avg_combined_score': float(results['combined_score'].mean())
+            'avg_combined_score': float(results['combined_score'].mean()),
+            'thresholds_used': {
+                'medium': float(final_medium_threshold),
+                'high': float(final_high_threshold),
+                'iterations': iteration
+            }
         }
         
         # 🗑️ Clean up temp dataset
@@ -1237,10 +1314,17 @@ def apply_unlabeled():
         return jsonify({'error': f'Erreur lors de la création du modèle: {str(e)}'}), 500
 
 
-def _create_simplified_output_unlabeled(df_original: pd.DataFrame, results: pd.DataFrame) -> pd.DataFrame:
+def _create_simplified_output_unlabeled(df_original: pd.DataFrame, results: pd.DataFrame, 
+                                       high_threshold: float = 0.50, medium_threshold: float = 0.40) -> pd.DataFrame:
     """
     Create simplified CSV output for unlabeled predictions
     Format: Customer_ID (optional), Transaction_ID, Timestamp, Fraud_Probability, Risk_Level
+    
+    Args:
+        df_original: Original dataset
+        results: Prediction results from apply_automl_production
+        high_threshold: Threshold for HIGH risk (default: 0.50)
+        medium_threshold: Threshold for MEDIUM risk (default: 0.40)
     """
     output_columns = []
     
@@ -1315,20 +1399,19 @@ def _create_simplified_output_unlabeled(df_original: pd.DataFrame, results: pd.D
     # ✅ Colonnes générées par calibrate_probabilities()
     output_columns.append(('Fraud_Probability_Calibrated', results['fraud_probability_calibrated']))
     
-    # Add risk level (basé sur combined_score)
-    # 🎯 Seuils optimisés pour le mode ensemble (équilibre détection/précision)
-    # Compromis entre sensibilité du mode ensemble et contrôle des faux positifs
+    # Add risk level (basé sur combined_score avec seuils dynamiques)
+    # 🎯 Seuils adaptatifs : ajustés automatiquement selon la distribution des scores
     risk_levels = []
     fraude_binary = []  # Colonne binaire pour compatibilité avec mode classique
     
     for score in results['combined_score']:
-        if score >= 0.50:  # 50% - Très haute confiance
+        if score >= high_threshold:  # HIGH risk (seuil dynamique)
             risk_levels.append('HIGH')
             fraude_binary.append(1)
-        elif score >= 0.40:  # 40% - Confiance moyenne (seuil de détection)
+        elif score >= medium_threshold:  # MEDIUM risk (seuil dynamique)
             risk_levels.append('MEDIUM')
             fraude_binary.append(1)  # MEDIUM et HIGH = Fraude
-        else:  # < 40% - Probablement légitime
+        else:  # LOW risk
             risk_levels.append('LOW')
             fraude_binary.append(0)
     
