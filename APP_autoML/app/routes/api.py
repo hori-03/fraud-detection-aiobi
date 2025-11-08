@@ -806,15 +806,13 @@ def _predict_with_ensemble(model, filepath, temp_dataset_file, current_user, cur
         current_app.logger.info("📊 Creating enriched CSV output...")
         output_df = _create_simplified_output_unlabeled(df_prod, results)
         
-        # Sauvegarder
+        # Sauvegarder dans UPLOAD_FOLDER (même comportement que les modèles classiques)
         timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
         output_filename = f"predictions_{model.model_name}_{timestamp}.csv"
-        output_dir = PathLib(current_app.config['UPLOAD_FOLDER']) / 'predictions'
-        output_dir.mkdir(exist_ok=True)
-        output_path = output_dir / output_filename
+        output_path = Path(current_app.config['UPLOAD_FOLDER']) / output_filename
         
         output_df.to_csv(output_path, index=False)
-        current_app.logger.info(f"✅ Predictions saved locally: {output_path}")
+        current_app.logger.info(f"✅ Predictions saved: {output_path}")
         
         # Calculer les statistiques avec les seuils optimisés (40% et 50%)
         fraud_detected = int((results['combined_score'] >= 0.40).sum())  # MEDIUM + HIGH
@@ -831,39 +829,43 @@ def _predict_with_ensemble(model, filepath, temp_dataset_file, current_user, cur
             'avg_combined_score': float(results['combined_score'].mean())
         }
         
-        # � Upload predictions to S3 for persistent storage
-        s3_key = None
+        
+        # � Upload predictions to S3 et générer URL de téléchargement
+        current_app.logger.info(f"[S3 UPLOAD] Preparing S3 upload for {output_filename}")
+        s3_bucket = get_s3_bucket()
+        s3_key = f"user_data/{current_user.id}/predictions/{output_filename}"
         download_url = None
+        
         try:
-            s3_bucket = get_s3_bucket()
-            s3_key = f"user_data/{current_user.id}/predictions/{output_filename}"
-            
             current_app.logger.info(f"[S3 UPLOAD] Starting upload to s3://{s3_bucket}/{s3_key}")
             s3_client = boto3.client('s3')
             s3_client.upload_file(str(output_path), s3_bucket, s3_key)
             
+            # Générer URL de téléchargement via notre API
             download_url = f"/api/download_s3_predictions?key={s3_key}"
-            current_app.logger.info(f"[S3 UPLOAD] ✅ SUCCESS - File uploaded to S3: s3://{s3_bucket}/{s3_key}")
+            current_app.logger.info(f"[S3 UPLOAD] ✅ SUCCESS - File uploaded to S3")
             current_app.logger.info(f"[S3 UPLOAD] Download URL: {download_url}")
             
-            # Clean up local file after upload
+            # Supprimer le fichier temporaire après upload
             output_path.unlink()
-            current_app.logger.info(f"�🗑️  Local predictions file deleted (cloud-only mode)")
+            current_app.logger.info(f"🗑️  Temporary predictions file deleted from {output_path}")
             
         except Exception as e:
             current_app.logger.error(f"[S3 UPLOAD] ❌ FAILED - Error: {e}")
             current_app.logger.error(f"[S3 UPLOAD] Traceback: {traceback.format_exc()}")
-            download_url = f"/download/{output_filename}"  # Fallback to old route
+            # Fallback: retourner le chemin local (ne fonctionnera pas sur Railway mais évite le crash)
+            download_url = f"/download/{output_filename}"
+            current_app.logger.warning(f"[S3 UPLOAD] Falling back to local path: {download_url}")
         
         # 🗑️ Clean up temp dataset
         if temp_dataset_file and temp_dataset_file.exists():
             temp_dataset_file.unlink()
-        
+
+        # ✅ Return local path (same behavior as classic models)
         return jsonify({
             'success': True,
             'message': f'Prédictions ensemble effectuées avec succès sur {len(results)} transactions',
-            'output_path': f"s3://{s3_bucket}/{s3_key}" if s3_key else str(output_path),
-            'download_url': download_url if download_url else f"/download/{output_filename}",
+            'output_path': str(output_path),
             'predictions_summary': stats,
             'model_type': 'ensemble'
         }), 200
