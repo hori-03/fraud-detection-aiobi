@@ -829,34 +829,6 @@ def _predict_with_ensemble(model, filepath, temp_dataset_file, current_user, cur
             'avg_combined_score': float(results['combined_score'].mean())
         }
         
-        
-        # � Upload predictions to S3 et générer URL de téléchargement
-        current_app.logger.info(f"[S3 UPLOAD] Preparing S3 upload for {output_filename}")
-        s3_bucket = get_s3_bucket()
-        s3_key = f"user_data/{current_user.id}/predictions/{output_filename}"
-        download_url = None
-        
-        try:
-            current_app.logger.info(f"[S3 UPLOAD] Starting upload to s3://{s3_bucket}/{s3_key}")
-            s3_client = boto3.client('s3')
-            s3_client.upload_file(str(output_path), s3_bucket, s3_key)
-            
-            # Générer URL de téléchargement via notre API
-            download_url = f"/api/download_s3_predictions?key={s3_key}"
-            current_app.logger.info(f"[S3 UPLOAD] ✅ SUCCESS - File uploaded to S3")
-            current_app.logger.info(f"[S3 UPLOAD] Download URL: {download_url}")
-            
-            # Supprimer le fichier temporaire après upload
-            output_path.unlink()
-            current_app.logger.info(f"🗑️  Temporary predictions file deleted from {output_path}")
-            
-        except Exception as e:
-            current_app.logger.error(f"[S3 UPLOAD] ❌ FAILED - Error: {e}")
-            current_app.logger.error(f"[S3 UPLOAD] Traceback: {traceback.format_exc()}")
-            # Fallback: retourner le chemin local (ne fonctionnera pas sur Railway mais évite le crash)
-            download_url = f"/download/{output_filename}"
-            current_app.logger.warning(f"[S3 UPLOAD] Falling back to local path: {download_url}")
-        
         # 🗑️ Clean up temp dataset
         if temp_dataset_file and temp_dataset_file.exists():
             temp_dataset_file.unlink()
