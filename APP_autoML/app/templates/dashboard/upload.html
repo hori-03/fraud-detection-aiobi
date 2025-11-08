@@ -440,6 +440,9 @@ document.getElementById('train-btn').addEventListener('click', async () => {
         document.getElementById('analysis-section').classList.add('hidden');
         document.getElementById('training-section').classList.remove('hidden');
         
+        // 🎨 Démarrer les animations et le timer
+        startTrainingAnimations();
+        
         try {
             const response = await fetch('/api/apply_unlabeled', {
                 method: 'POST',
@@ -454,22 +457,32 @@ document.getElementById('train-btn').addEventListener('click', async () => {
             
             const data = await response.json();
             
+            // Arrêter les animations
+            stopTrainingAnimations();
+            
             if (data.success) {
-                // ✅ Afficher message de succès et rediriger vers /models
-                alert(`✅ Modèle ensemble créé avec succès!\n\n` +
-                      `Le modèle a été sauvegardé.\n` +
-                      `Vous pouvez maintenant l'utiliser dans "Faire des prédictions"\n` +
-                      `pour analyser vos données.`);
+                // 🎊 Confetti et notification de succès
+                window.AiobiAnimations.celebrateSuccess();
+                window.AiobiAnimations.showToast('🎉 Modèle ensemble créé avec succès !', 'success', 4000);
                 
-                // Rediriger vers /models
-                window.location.href = '/models';
+                // ✅ Afficher message et rediriger vers /models
+                setTimeout(() => {
+                    alert(`✅ Modèle ensemble créé avec succès!\n\n` +
+                          `Le modèle a été sauvegardé.\n` +
+                          `Vous pouvez maintenant l'utiliser dans "Faire des prédictions"\n` +
+                          `pour analyser vos données.`);
+                    
+                    // Rediriger vers /models
+                    window.location.href = '/models';
+                }, 500);
             } else {
-                alert('Erreur: ' + data.error);
+                window.AiobiAnimations.showToast('❌ Erreur: ' + data.error, 'error');
                 document.getElementById('training-section').classList.add('hidden');
                 document.getElementById('analysis-section').classList.remove('hidden');
             }
         } catch (error) {
-            alert('Erreur lors de la création du modèle: ' + error.message);
+            stopTrainingAnimations();
+            window.AiobiAnimations.showToast('❌ Erreur: ' + error.message, 'error');
             document.getElementById('training-section').classList.add('hidden');
             document.getElementById('analysis-section').classList.remove('hidden');
         }
